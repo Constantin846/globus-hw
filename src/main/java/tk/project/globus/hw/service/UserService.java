@@ -41,7 +41,8 @@ public class UserService {
     UserEntity existingUser = getUserById(userUpdateDto.id());
     UserEntity userToUpdate =
         updateUserFields(existingUser, userMapper.toUserEntity(userUpdateDto));
-    UserEntity updatedUser = userRepository.save(userToUpdate);
+    userRepository.save(userToUpdate);
+    UserEntity updatedUser = getUserById(userToUpdate.getId());
 
     log.debug("Обновлен пользователь: {}.", updatedUser);
     return userMapper.toUserInfoDto(updatedUser);

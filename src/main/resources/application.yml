@@ -27,6 +27,8 @@ app:
   controller:
     base-path: '/api/v1'
     users-path: '/users'
+    accounts-path: '/accounts'
 
     endpoints:
       users: "${app.controller.base-path}${app.controller.users-path}"
+      accounts: "${app.controller.base-path}${app.controller.accounts-path}"
