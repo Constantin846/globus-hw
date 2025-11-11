@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    driverClassName: org.postgersql.Driver
+    url: jdbc:postgresql://db:5432/globus
+    username: globus
+    password: ${DB_PASSWORD}
+
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog.xml
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    # show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+
+app:
+  controller:
+    base-path: '/api/v1'
+    users-path: '/users'
+
+    endpoints:
+      users: "${app.controller.base-path}${app.controller.users-path}"
