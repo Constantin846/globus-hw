@@ -6,8 +6,6 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -19,23 +17,22 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Data
 @Entity
-@Table(name = "bank_account")
+@Table(name = "currencies")
 @EntityListeners(AuditingEntityListener.class)
-public class BankAccountEntity {
+public class CurrencyEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "balance", nullable = false)
-  private BigDecimal balance;
+  @Column(name = "char_code", updatable = false, nullable = false, unique = true)
+  private String charCode;
 
-  @Column(name = "currencyCharCode", nullable = false)
-  private String currencyCharCode;
+  @Column(name = "name", updatable = false, nullable = false)
+  private String name;
 
-  @ManyToOne
-  @JoinColumn(name = "user_id", updatable = false, nullable = false)
-  private UserEntity user;
+  @Column(name = "vunit_rate", nullable = false)
+  private BigDecimal vunitRate;
 
   @CreatedDate
   @Column(name = "create_date_time", updatable = false, nullable = false)

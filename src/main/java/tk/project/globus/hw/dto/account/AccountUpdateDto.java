@@ -17,4 +17,4 @@ public record AccountUpdateDto(
     @NotBlank
         @Size(min = 1, max = 20)
         @Schema(description = "Валюта банковского счета", requiredMode = REQUIRED)
-        String currency) {}
+        String currencyCharCode) {}

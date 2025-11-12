@@ -38,7 +38,7 @@ public class BankAccountController {
     log.info(
         "Получен запрос на создание банковского счета с балансом {} {} и id пользователя {}.",
         account.balance(),
-        account.currency(),
+        account.currencyCharCode(),
         account.user_id());
 
     AccountInfoDto savedAccount = bankAccountService.create(account);
@@ -58,10 +58,24 @@ public class BankAccountController {
     return updatedAccount;
   }
 
+  @PatchMapping("/{accountId}")
+  @Operation(summary = "Изменение валюты банковского счета")
+  public AccountInfoDto changeCurrency(
+      @PathVariable("accountId") UUID accountId, @RequestParam("currency") String currency) {
+
+    log.info("Получен запрос на изменение валюты банковского счета c id: {}.", accountId);
+
+    AccountInfoDto updatedAccount = bankAccountService.changeCurrency(accountId, currency);
+
+    log.info("Выполнен запрос на изменение валюты банковского счета: {}.", updatedAccount);
+    return updatedAccount;
+  }
+
   @GetMapping("/{accountId}")
   @Operation(summary = "Получение информации о пользователе")
   public AccountInfoDto find(
-      @PathVariable("accountId") UUID accountId, @RequestParam("cur") String currency) {
+      @PathVariable("accountId") UUID accountId, @RequestParam("currency") String currency) {
+
     log.info("Получен запрос на получение информации о банковском счете с id {}.", accountId);
 
     AccountInfoDto foundAccount = bankAccountService.getById(accountId, currency);

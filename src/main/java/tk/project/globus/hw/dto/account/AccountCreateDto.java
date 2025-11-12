@@ -16,6 +16,6 @@ public record AccountCreateDto(
     @NotBlank
         @Size(min = 1, max = 20)
         @Schema(description = "Валюта банковского счета", requiredMode = REQUIRED)
-        String currency,
+        String currencyCharCode,
     @NotNull @Schema(description = "Id пользователя банковского счета", requiredMode = REQUIRED)
         UUID user_id) {}

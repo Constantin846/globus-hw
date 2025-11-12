@@ -12,9 +12,11 @@ import tk.project.globus.hw.dto.account.AccountUpdateDto;
 import tk.project.globus.hw.entity.BankAccountEntity;
 import tk.project.globus.hw.entity.UserEntity;
 import tk.project.globus.hw.exception.BankAccountNotFoundException;
+import tk.project.globus.hw.exception.CurrencyNotFoundException;
 import tk.project.globus.hw.exception.UserNotFoundException;
 import tk.project.globus.hw.mapper.BankAccountMapper;
 import tk.project.globus.hw.repository.BankAccountRepository;
+import tk.project.globus.hw.repository.CurrencyRepository;
 import tk.project.globus.hw.repository.UserRepository;
 
 @Slf4j
@@ -24,10 +26,14 @@ public class BankAccountService {
 
   private final BankAccountMapper bankAccountMapper;
   private final BankAccountRepository bankAccountRepository;
+  private final CurrencyRepository currencyRepository;
+  private final CurrencyService currencyService;
   private final UserRepository userRepository;
 
   @Transactional
   public AccountInfoDto create(AccountCreateDto newAccount) {
+    throwExceptionIfCurrencyNotExists(newAccount.currencyCharCode());
+
     UserEntity user = getUserById(newAccount.user_id());
     BankAccountEntity accountEntity = bankAccountMapper.toBankAccountEntity(newAccount);
 
@@ -52,13 +58,27 @@ public class BankAccountService {
     return bankAccountMapper.toAccountInfoDto(updatedAccount);
   }
 
-  public AccountInfoDto getById(UUID accountId, String currency) {
+  @Transactional
+  public AccountInfoDto changeCurrency(UUID accountId, String currencyCharCode) {
+    throwExceptionIfCurrencyNotExists(currencyCharCode);
+
+    BankAccountEntity existingAccount = getAccountById(accountId);
+    BankAccountEntity accountToUpdate = changeCurrency(existingAccount, currencyCharCode);
+
+    bankAccountRepository.save(accountToUpdate);
+    BankAccountEntity updatedAccount = getAccountById(accountToUpdate.getId());
+
+    log.debug("Обновлена валюта банковский счет: {}.", updatedAccount);
+    return bankAccountMapper.toAccountInfoDto(updatedAccount);
+  }
+
+  public AccountInfoDto getById(UUID accountId, String currencyCharCode) {
     BankAccountEntity account = getAccountById(accountId);
 
     log.debug("Найден банковский счет: {}.", account);
 
-    if (Objects.nonNull(currency)) {
-      changeCurrency(account, currency);
+    if (Objects.nonNull(currencyCharCode)) {
+      account = changeCurrency(account, currencyCharCode);
     }
     return bankAccountMapper.toAccountInfoDto(account);
   }
@@ -96,14 +116,21 @@ public class BankAccountService {
     if (Objects.nonNull(newAccount.getBalance())) {
       oldAccount.setBalance(newAccount.getBalance());
     }
-    if (Objects.nonNull(newAccount.getCurrency())) {
-      oldAccount.setCurrency(newAccount.getCurrency());
+    if (Objects.nonNull(newAccount.getCurrencyCharCode())) {
+      throwExceptionIfCurrencyNotExists(newAccount.getCurrencyCharCode());
+      oldAccount.setCurrencyCharCode(newAccount.getCurrencyCharCode());
     }
     return oldAccount;
   }
 
-  private BankAccountEntity changeCurrency(BankAccountEntity account, String currency) {
-    // todo
-    return account;
+  private void throwExceptionIfCurrencyNotExists(String currencyCharCode) {
+    if (currencyRepository.findByCharCode(currencyCharCode).isEmpty()) {
+      throw new CurrencyNotFoundException(
+          String.format("Валюта c символьным кодом %s не найдена.", currencyCharCode));
+    }
+  }
+
+  private BankAccountEntity changeCurrency(BankAccountEntity account, String currencyCharCode) {
+    return currencyService.changeCurrency(account, currencyCharCode);
   }
 }

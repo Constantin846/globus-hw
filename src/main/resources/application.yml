@@ -16,12 +16,21 @@ spring:
       hibernate:
         format_sql: true
 
+  cloud:
+    openfeign:
+      enabled: true
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
   api-docs:
     enabled: true
     path: /v3/api-docs
+
+feign.client.config.currency-feign-client:
+  connect-timeout: 5000
+  read-timeout: 5000
+  loggerLevel: full
 
 app:
   controller:
@@ -32,3 +41,12 @@ app:
     endpoints:
       users: "${app.controller.base-path}${app.controller.users-path}"
       accounts: "${app.controller.base-path}${app.controller.accounts-path}"
+
+  currency-scheduler:
+    type: # mock # real scheduler in any case without mock
+    update-currencies:
+      date-req: '02/03/2002'
+      cron: '0 0 4 * * *'
+      zone: 'Europe/Moscow'
+
+  currency-feign-client.url: https://cbr.ru/scripts/XML_daily.asp

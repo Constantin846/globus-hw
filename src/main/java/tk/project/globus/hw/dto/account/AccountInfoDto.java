@@ -11,6 +11,7 @@ import tk.project.globus.hw.dto.user.UserInfoDto;
 public record AccountInfoDto(
     @Schema(description = "Id банковского счета", requiredMode = REQUIRED) UUID id,
     @Schema(description = "Баланс банковского счета", requiredMode = REQUIRED) BigDecimal balance,
-    @Schema(description = "Валюта банковского счета", requiredMode = REQUIRED) String currency,
+    @Schema(description = "Валюта банковского счета", requiredMode = REQUIRED)
+        String currencyCharCode,
     @Schema(description = "Пользователь банковского счета", requiredMode = REQUIRED)
         UserInfoDto user) {}

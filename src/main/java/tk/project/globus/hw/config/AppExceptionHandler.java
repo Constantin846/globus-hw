@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tk.project.globus.hw.dto.ErrorResponse;
 import tk.project.globus.hw.exception.BankAccountNotFoundException;
+import tk.project.globus.hw.exception.CurrencyNotFoundException;
 import tk.project.globus.hw.exception.UserConflictException;
 import tk.project.globus.hw.exception.UserNotFoundException;
 
@@ -18,7 +19,12 @@ import tk.project.globus.hw.exception.UserNotFoundException;
 public class AppExceptionHandler {
 
   @ResponseStatus(HttpStatus.NOT_FOUND)
-  @ExceptionHandler(exception = {UserNotFoundException.class, BankAccountNotFoundException.class})
+  @ExceptionHandler(
+      exception = {
+        BankAccountNotFoundException.class,
+        CurrencyNotFoundException.class,
+        UserNotFoundException.class,
+      })
   public ErrorResponse handleNotFound(RuntimeException ex) {
     return buildErrorResponse(ex, HttpStatus.NOT_FOUND);
   }
