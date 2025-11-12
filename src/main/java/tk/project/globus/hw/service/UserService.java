@@ -41,8 +41,8 @@ public class UserService {
     UserEntity existingUser = getUserById(userUpdateDto.id());
     UserEntity userToUpdate =
         updateUserFields(existingUser, userMapper.toUserEntity(userUpdateDto));
-    userRepository.save(userToUpdate);
-    UserEntity updatedUser = getUserById(userToUpdate.getId());
+
+    UserEntity updatedUser = userRepository.save(userToUpdate);
 
     log.debug("Обновлен пользователь: {}.", updatedUser);
     return userMapper.toUserInfoDto(updatedUser);
@@ -70,7 +70,7 @@ public class UserService {
         .orElseThrow(
             () ->
                 new UserNotFoundException(
-                    String.format("Пользователь с id %s не найдено.", userId)));
+                    String.format("Пользователь с id %s не найден.", userId)));
   }
 
   private void throwExceptionIfUserEmailExists(String email) {

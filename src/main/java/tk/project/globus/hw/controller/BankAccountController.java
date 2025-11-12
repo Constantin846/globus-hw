@@ -39,7 +39,7 @@ public class BankAccountController {
         "Получен запрос на создание банковского счета с балансом {} {} и id пользователя {}.",
         account.balance(),
         account.currencyCharCode(),
-        account.user_id());
+        account.userId());
 
     AccountInfoDto savedAccount = bankAccountService.create(account);
 
@@ -74,7 +74,8 @@ public class BankAccountController {
   @GetMapping("/{accountId}")
   @Operation(summary = "Получение информации о пользователе")
   public AccountInfoDto find(
-      @PathVariable("accountId") UUID accountId, @RequestParam("currency") String currency) {
+      @PathVariable("accountId") UUID accountId,
+      @RequestParam(value = "currency", required = false) String currency) {
 
     log.info("Получен запрос на получение информации о банковском счете с id {}.", accountId);
 

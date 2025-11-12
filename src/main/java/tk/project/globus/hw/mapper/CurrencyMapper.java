@@ -5,11 +5,14 @@ import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.mapstruct.factory.Mappers;
 import tk.project.globus.hw.dto.currency.CurrencyDto;
 import tk.project.globus.hw.entity.CurrencyEntity;
 
 @Mapper(componentModel = "spring")
 public interface CurrencyMapper {
+
+  CurrencyMapper MAPPER = Mappers.getMapper(CurrencyMapper.class);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(source = "vunitRate", target = "vunitRate", qualifiedByName = "parseStringToBigDecimal")

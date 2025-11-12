@@ -1,13 +1,13 @@
 spring:
   datasource:
-    driverClassName: org.postgersql.Driver
-    url: jdbc:postgresql://db:5432/globus
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/globus
     username: globus
     password: ${DB_PASSWORD}
 
   liquibase:
-    change-log: classpath:/db/changelog/db.changelog.xml
-    enabled: false
+    change-log: classpath:/db.changelog/changelog-main.xml
+    enabled: true
   jpa:
     hibernate:
       ddl-auto: validate
@@ -42,11 +42,16 @@ app:
       users: "${app.controller.base-path}${app.controller.users-path}"
       accounts: "${app.controller.base-path}${app.controller.accounts-path}"
 
+  zone: 'Europe/Moscow'
+
   currency-scheduler:
+    enabled: true
     type: # mock # real scheduler in any case without mock
     update-currencies:
-      date-req: '02/03/2002'
       cron: '0 0 4 * * *'
-      zone: 'Europe/Moscow'
 
-  currency-feign-client.url: https://cbr.ru/scripts/XML_daily.asp
+  currency-feign-client:
+    url: https://cbr.ru/scripts/XML_daily.asp
+    get-currencies.date-req.pattern: 'dd/MM/yyyy'
+
+  db-init.add-currencies.enabled: true

@@ -2,6 +2,7 @@ package tk.project.globus.hw.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBooleanProperty(value = "${app.currency-scheduler.enabled}")
 @ConditionalOnExpression("'${app.currency-scheduler.type}'.equals('mock')")
 public class CurrencySchedulerMock {
 

@@ -1,11 +1,16 @@
 package tk.project.globus.hw.scheduler;
 
-import jakarta.annotation.PostConstruct;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -20,31 +25,28 @@ import tk.project.globus.hw.repository.CurrencyRepository;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnMissingBean(CurrencySchedulerMock.class)
+@ConditionalOnBooleanProperty(value = "${app.currency-scheduler.enabled}")
 public class CurrencyScheduler {
 
-  @Value("${app.currency-scheduler.update-currencies.date-req}")
-  private String updateCurrenciesDateReq;
+  @Value("${app.zone}")
+  private String updateCurrenciesZone;
+
+  @Value("${app.currency-feign-client.get-currencies.date-req.pattern}")
+  private String dateReqPattern;
 
   private final CurrencyFeignClient currencyClient;
   private final CurrencyMapper currencyMapper;
   private final CurrencyRepository currencyRepository;
 
-  @PostConstruct
-  private void init() {
-    if (currencyRepository.count() < 1) {
-      updateCurrencies();
-    }
-  }
-
   @Transactional
-  @Scheduled(
-      cron = "${app.currency-scheduler.update-currencies.cron}",
-      zone = "${app.currency-scheduler.update-currencies.zone}")
-  // @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
+  @Scheduled(cron = "${app.currency-scheduler.update-currencies.cron}", zone = "${app.zone}")
+  @Scheduled(fixedDelay = 120, timeUnit = TimeUnit.SECONDS)
   public void updateCurrencies() {
     log.info("Запуск шедулера для обновления курсов валют.");
 
-    CurrenciesDto result = currencyClient.getCurrencies(updateCurrenciesDateReq);
+    LocalDate date = LocalDate.ofInstant(Instant.now(), ZoneId.of(updateCurrenciesZone));
+    CurrenciesDto result =
+        currencyClient.getCurrencies(date.format(DateTimeFormatter.ofPattern(dateReqPattern)));
 
     List<CurrencyEntity> currenciesToSave =
         currencyMapper.toCurrencyEntities(result.getCurrencies());
@@ -52,7 +54,7 @@ public class CurrencyScheduler {
         currenciesToSave.stream().map(CurrencyEntity::getCharCode).toList();
 
     Map<String, CurrencyEntity> existingCurrencies =
-        currencyRepository.findMapByCharCodeIn(charCodesToSave);
+        currencyRepository.findMapByCharCodeInForUpdateNoWait(charCodesToSave);
 
     for (CurrencyEntity currency : currenciesToSave) {
       if (existingCurrencies.containsKey(currency.getCharCode())) {

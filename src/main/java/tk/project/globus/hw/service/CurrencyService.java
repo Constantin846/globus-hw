@@ -4,7 +4,7 @@ import java.math.RoundingMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import tk.project.globus.hw.entity.BankAccountEntity;
+import tk.project.globus.hw.entity.CurrencyChangeable;
 import tk.project.globus.hw.entity.CurrencyEntity;
 import tk.project.globus.hw.exception.CurrencyNotFoundException;
 import tk.project.globus.hw.repository.CurrencyRepository;
@@ -16,20 +16,20 @@ public class CurrencyService {
 
   private final CurrencyRepository currencyRepository;
 
-  public BankAccountEntity changeCurrency(BankAccountEntity account, String currencyCharCode) {
+  public <T extends CurrencyChangeable> T changeCurrency(T objToChange, String currencyCharCode) {
 
-    CurrencyEntity oldCurrency = getByCharCode(account.getCurrencyCharCode());
+    CurrencyEntity oldCurrency = getByCharCode(objToChange.getCurrencyCharCode());
     CurrencyEntity newCurrency = getByCharCode(currencyCharCode);
 
-    account.setCurrencyCharCode(currencyCharCode);
-    account.setBalance(
-        account
+    objToChange.setCurrencyCharCode(currencyCharCode);
+    objToChange.setBalance(
+        objToChange
             .getBalance()
             .multiply(oldCurrency.getVunitRate())
             .divide(newCurrency.getVunitRate(), RoundingMode.HALF_UP));
 
-    log.debug("Баланс банковского счет пересчитан для другой валюты: {}.", account);
-    return account;
+    log.debug("Баланс пересчитан для другой валюты: {}.", objToChange);
+    return objToChange;
   }
 
   private CurrencyEntity getByCharCode(String charCode) {

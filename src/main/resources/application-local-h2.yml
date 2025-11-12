@@ -7,9 +7,11 @@ spring:
     username: local
     password: ${DB_PASSWORD}
     driverClassName: org.h2.Driver
+  liquibase:
+    enabled: true
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
 
 logging:
   level:

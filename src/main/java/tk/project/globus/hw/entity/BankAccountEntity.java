@@ -19,9 +19,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Data
 @Entity
-@Table(name = "bank_account")
+@Table(name = "bank_accounts")
 @EntityListeners(AuditingEntityListener.class)
-public class BankAccountEntity {
+public class BankAccountEntity implements CurrencyChangeable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,7 +30,7 @@ public class BankAccountEntity {
   @Column(name = "balance", nullable = false)
   private BigDecimal balance;
 
-  @Column(name = "currencyCharCode", nullable = false)
+  @Column(name = "currency_char_code", nullable = false)
   private String currencyCharCode;
 
   @ManyToOne

@@ -18,4 +18,4 @@ public record AccountCreateDto(
         @Schema(description = "Валюта банковского счета", requiredMode = REQUIRED)
         String currencyCharCode,
     @NotNull @Schema(description = "Id пользователя банковского счета", requiredMode = REQUIRED)
-        UUID user_id) {}
+        UUID userId) {}

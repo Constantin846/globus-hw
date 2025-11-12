@@ -26,7 +26,7 @@ public class CurrencyEntity {
   private UUID id;
 
   @Column(name = "char_code", updatable = false, nullable = false, unique = true)
-  private String charCode;
+  private String charCode = "RUB";
 
   @Column(name = "name", updatable = false, nullable = false)
   private String name;

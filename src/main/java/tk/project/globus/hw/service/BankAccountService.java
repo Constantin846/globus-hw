@@ -34,9 +34,8 @@ public class BankAccountService {
   public AccountInfoDto create(AccountCreateDto newAccount) {
     throwExceptionIfCurrencyNotExists(newAccount.currencyCharCode());
 
-    UserEntity user = getUserById(newAccount.user_id());
+    UserEntity user = getUserById(newAccount.userId());
     BankAccountEntity accountEntity = bankAccountMapper.toBankAccountEntity(newAccount);
-
     accountEntity.setUser(user);
     BankAccountEntity savedAccount = bankAccountRepository.save(accountEntity);
 
@@ -51,8 +50,7 @@ public class BankAccountService {
         updateAccountFields(
             existingAccount, bankAccountMapper.toBankAccountEntity(accountUpdateDto));
 
-    bankAccountRepository.save(accountToUpdate);
-    BankAccountEntity updatedAccount = getAccountById(accountToUpdate.getId());
+    BankAccountEntity updatedAccount = bankAccountRepository.save(accountToUpdate);
 
     log.debug("Обновлен банковский счет: {}.", updatedAccount);
     return bankAccountMapper.toAccountInfoDto(updatedAccount);
@@ -64,9 +62,7 @@ public class BankAccountService {
 
     BankAccountEntity existingAccount = getAccountById(accountId);
     BankAccountEntity accountToUpdate = changeCurrency(existingAccount, currencyCharCode);
-
-    bankAccountRepository.save(accountToUpdate);
-    BankAccountEntity updatedAccount = getAccountById(accountToUpdate.getId());
+    BankAccountEntity updatedAccount = bankAccountRepository.save(accountToUpdate);
 
     log.debug("Обновлена валюта банковский счет: {}.", updatedAccount);
     return bankAccountMapper.toAccountInfoDto(updatedAccount);
@@ -98,7 +94,7 @@ public class BankAccountService {
         .orElseThrow(
             () ->
                 new UserNotFoundException(
-                    String.format("Пользователь с id %s не найдено.", userId)));
+                    String.format("Пользователь с id %s не найден.", userId)));
   }
 
   private BankAccountEntity getAccountById(UUID accountId) {
@@ -107,7 +103,7 @@ public class BankAccountService {
         .orElseThrow(
             () ->
                 new BankAccountNotFoundException(
-                    String.format("Банковский счет с id %s не найдено.", accountId)));
+                    String.format("Банковский счет с id %s не найден.", accountId)));
   }
 
   private BankAccountEntity updateAccountFields(

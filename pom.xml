@@ -70,10 +70,10 @@
         </dependency>
 
         <!-- LIQUIBASE -->
-        <!-- <dependency>
+        <dependency>
              <groupId>org.liquibase</groupId>
              <artifactId>liquibase-core</artifactId>
-         </dependency>-->
+        </dependency>
 
         <!-- FEIGN CLIENT -->
         <dependency>
