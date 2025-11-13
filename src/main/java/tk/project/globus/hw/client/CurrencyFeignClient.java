@@ -12,6 +12,6 @@ import tk.project.globus.hw.dto.currency.CurrenciesDto;
     configuration = CurrencyFeignClientConfig.class)
 public interface CurrencyFeignClient {
 
-  @GetMapping(produces = "application/json")
+  @GetMapping
   CurrenciesDto getCurrencies(@RequestParam("date_req") String dateReq);
 }

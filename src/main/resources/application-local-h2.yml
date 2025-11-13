@@ -15,12 +15,5 @@ spring:
 
 logging:
   level:
-    org:
-      springframework:
-        security:
-          web: DEBUG
     org.hibernate:
-      SQL: DEBUG
-      type: TRACE
-      orm.jdbc.bind: TRACE
-    
+      SQL: INFO

@@ -30,7 +30,7 @@ springdoc:
 feign.client.config.currency-feign-client:
   connect-timeout: 5000
   read-timeout: 5000
-  loggerLevel: full
+  loggerLevel: BASIC
 
 app:
   controller:

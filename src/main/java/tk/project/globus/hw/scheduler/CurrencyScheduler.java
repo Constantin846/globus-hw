@@ -6,7 +6,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +24,7 @@ import tk.project.globus.hw.repository.CurrencyRepository;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnMissingBean(CurrencySchedulerMock.class)
-@ConditionalOnBooleanProperty(value = "${app.currency-scheduler.enabled}")
+@ConditionalOnBooleanProperty(value = "${app.currency-scheduler.enabled}", matchIfMissing = true)
 public class CurrencyScheduler {
 
   @Value("${app.zone}")
@@ -40,7 +39,7 @@ public class CurrencyScheduler {
 
   @Transactional
   @Scheduled(cron = "${app.currency-scheduler.update-currencies.cron}", zone = "${app.zone}")
-  @Scheduled(fixedDelay = 120, timeUnit = TimeUnit.SECONDS)
+  // @Scheduled(fixedDelay = 120, timeUnit = TimeUnit.SECONDS)
   public void updateCurrencies() {
     log.info("Запуск шедулера для обновления курсов валют.");
 
