@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tk.project.globus.hw.client.CurrencyFeignClient;
 import tk.project.globus.hw.dto.currency.CurrenciesDto;
 import tk.project.globus.hw.entity.CurrencyEntity;
+import tk.project.globus.hw.exception.CurrencySchedulerException;
 import tk.project.globus.hw.mapper.CurrencyMapper;
 import tk.project.globus.hw.repository.CurrencyRepository;
 
@@ -43,29 +44,38 @@ public class CurrencyScheduler {
   public void updateCurrencies() {
     log.info("Запуск шедулера для обновления курсов валют.");
 
-    LocalDate date = LocalDate.ofInstant(Instant.now(), ZoneId.of(updateCurrenciesZone));
-    CurrenciesDto result =
-        currencyClient.getCurrencies(date.format(DateTimeFormatter.ofPattern(dateReqPattern)));
+    try {
+      LocalDate date = LocalDate.ofInstant(Instant.now(), ZoneId.of(updateCurrenciesZone));
+      CurrenciesDto result =
+          currencyClient.getCurrencies(date.format(DateTimeFormatter.ofPattern(dateReqPattern)));
 
-    List<CurrencyEntity> currenciesToSave =
-        currencyMapper.toCurrencyEntities(result.getCurrencies());
-    List<String> charCodesToSave =
-        currenciesToSave.stream().map(CurrencyEntity::getCharCode).toList();
+      List<CurrencyEntity> currenciesToSave =
+          currencyMapper.toCurrencyEntities(result.getCurrencies());
+      List<String> charCodesToSave =
+          currenciesToSave.stream().map(CurrencyEntity::getCharCode).toList();
 
-    Map<String, CurrencyEntity> existingCurrencies =
-        currencyRepository.findMapByCharCodeInForUpdateNoWait(charCodesToSave);
+      Map<String, CurrencyEntity> existingCurrencies =
+          currencyRepository.findMapByCharCodeInForUpdateNoWait(charCodesToSave);
 
-    for (CurrencyEntity currency : currenciesToSave) {
-      if (existingCurrencies.containsKey(currency.getCharCode())) {
-        CurrencyEntity existingCurrency = existingCurrencies.get(currency.getCharCode());
-        existingCurrency.setVunitRate(currency.getVunitRate());
+      for (CurrencyEntity currency : currenciesToSave) {
+        if (existingCurrencies.containsKey(currency.getCharCode())) {
+          CurrencyEntity existingCurrency = existingCurrencies.get(currency.getCharCode());
+          existingCurrency.setVunitRate(currency.getVunitRate());
 
-      } else {
-        currencyRepository.save(currency);
+        } else {
+          currencyRepository.save(currency);
+        }
       }
-    }
-    currencyRepository.saveAll(existingCurrencies.values());
+      currencyRepository.saveAll(existingCurrencies.values());
 
-    log.info("Шедулер для обновления курсов валют завершил работу.");
+      log.info("Шедулер для обновления курсов валют завершил работу успешно.");
+    } catch (Throwable ex) {
+      String msgError =
+          String.format(
+              "Шедулер для обновления курсов валют завершил работу с ошибкой: %s.",
+              ex.getMessage());
+      log.info(msgError);
+      throw new CurrencySchedulerException(msgError);
+    }
   }
 }

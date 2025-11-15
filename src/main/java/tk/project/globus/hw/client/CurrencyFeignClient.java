@@ -8,10 +8,10 @@ import tk.project.globus.hw.dto.currency.CurrenciesDto;
 
 @FeignClient(
     value = "currencyFeignClient",
-    url = "${app.currency-feign-client.url}",
+    url = "${app.currency-feign-client.host}",
     configuration = CurrencyFeignClientConfig.class)
 public interface CurrencyFeignClient {
 
-  @GetMapping
+  @GetMapping(value = "${app.currency-feign-client.url}")
   CurrenciesDto getCurrencies(@RequestParam("date_req") String dateReq);
 }

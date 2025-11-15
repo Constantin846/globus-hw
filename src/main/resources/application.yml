@@ -51,7 +51,8 @@ app:
       cron: '0 0 4 * * *'
 
   currency-feign-client:
-    url: https://cbr.ru/scripts/XML_daily.asp
+    host: https://cbr.ru
+    url: /scripts/XML_daily.asp
     get-currencies.date-req.pattern: 'dd/MM/yyyy'
 
   db-init.add-currencies.enabled: true

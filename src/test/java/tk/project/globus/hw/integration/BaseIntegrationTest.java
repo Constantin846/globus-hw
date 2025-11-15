@@ -17,7 +17,7 @@ import tk.project.globus.hw.repository.UserRepository;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class BaseIntegrationTest {
+public class BaseIntegrationTest {
 
   @Autowired protected ObjectMapper objectMapper;
   @Autowired protected MockMvc mockMvc;
