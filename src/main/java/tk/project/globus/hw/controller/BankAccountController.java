@@ -3,9 +3,13 @@ package tk.project.globus.hw.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,8 +76,8 @@ public class BankAccountController {
   }
 
   @GetMapping("/{accountId}")
-  @Operation(summary = "Получение информации о пользователе")
-  public AccountInfoDto find(
+  @Operation(summary = "Получение информации о банковском счете")
+  public AccountInfoDto getById(
       @PathVariable("accountId") UUID accountId,
       @RequestParam(value = "currency", required = false) String currency) {
 
@@ -85,9 +89,27 @@ public class BankAccountController {
     return foundAccount;
   }
 
+  @GetMapping("of-user/{userId}")
+  @Operation(summary = "Получение информации о банковских счетах пользователя")
+  public List<AccountInfoDto> findAllByUserId(
+      @PathVariable("userId") UUID userId,
+      @PageableDefault(size = 10, sort = "balance", direction = Sort.Direction.DESC)
+          Pageable pageable) {
+
+    log.info(
+        "Получен запрос на получение информации о банковских счетах пользователя с id {}.", userId);
+
+    List<AccountInfoDto> accounts = bankAccountService.findAllByUserId(userId, pageable);
+
+    log.info(
+        "Выполнен запрос на получение информации о банковских счетах пользователя с id {}.",
+        userId);
+    return accounts;
+  }
+
   @DeleteMapping("/{accountId}")
-  @Operation(summary = "Удаление пользователя")
-  public AccountInfoDto delete(@PathVariable("accountId") UUID accountId) {
+  @Operation(summary = "Удаление банковского счета")
+  public AccountInfoDto deleteById(@PathVariable("accountId") UUID accountId) {
     log.info("Получен запрос на удаление банковского счета с id {}.", accountId);
 
     AccountInfoDto deletedAccount = bankAccountService.deleteById(accountId);

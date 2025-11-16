@@ -123,7 +123,7 @@ class UserIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @SneakyThrows
-  void findUser() {
+  void getUser() {
     // GIVEN
     saveExistingUser();
 
@@ -147,7 +147,7 @@ class UserIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @SneakyThrows
-  void findUserFailedIfUserNotFound() {
+  void getUserFailedIfUserNotFound() {
     // WHEN
     String result =
         mockMvc

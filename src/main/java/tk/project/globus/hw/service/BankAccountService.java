@@ -1,9 +1,11 @@
 package tk.project.globus.hw.service;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.project.globus.hw.dto.account.AccountCreateDto;
@@ -77,6 +79,12 @@ public class BankAccountService {
       account = changeCurrency(account, currencyCharCode);
     }
     return bankAccountMapper.toAccountInfoDto(account);
+  }
+
+  public List<AccountInfoDto> findAllByUserId(UUID userId, Pageable pageable) {
+    List<BankAccountEntity> accounts = bankAccountRepository.findAllByUserId(userId, pageable);
+    log.debug("Найден список банковских счетов пользователя с id {}.", userId);
+    return bankAccountMapper.toAccountsInfoDto(accounts);
   }
 
   @Transactional

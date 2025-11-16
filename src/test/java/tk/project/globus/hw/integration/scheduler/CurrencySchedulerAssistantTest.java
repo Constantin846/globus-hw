@@ -31,7 +31,7 @@ class CurrencySchedulerAssistantTest {
   public void lockCurrencyRow() throws InterruptedException {
     currencyRepository.findAllByCharCodeInForUpdateNoWait(List.of(CHAR_CODE_AUD));
     log.info("start locking currency row");
-    Thread.sleep(10_000);
+    Thread.sleep(4_000);
     log.info("finished locking currency row");
   }
 

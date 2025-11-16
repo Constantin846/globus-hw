@@ -1,5 +1,6 @@
 package tk.project.globus.hw.mapper;
 
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -19,4 +20,6 @@ public interface BankAccountMapper {
   BankAccountEntity toBankAccountEntity(AccountUpdateDto account);
 
   AccountInfoDto toAccountInfoDto(BankAccountEntity account);
+
+  List<AccountInfoDto> toAccountsInfoDto(List<BankAccountEntity> accounts);
 }

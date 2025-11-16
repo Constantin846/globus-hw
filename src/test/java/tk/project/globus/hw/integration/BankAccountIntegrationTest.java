@@ -1,5 +1,6 @@
 package tk.project.globus.hw.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -9,13 +10,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import tk.project.globus.hw.dto.account.AccountCreateDto;
 import tk.project.globus.hw.dto.account.AccountInfoDto;
 import tk.project.globus.hw.dto.account.AccountUpdateDto;
+import tk.project.globus.hw.dto.user.UserInfoDto;
 import tk.project.globus.hw.entity.BankAccountEntity;
 import tk.project.globus.hw.entity.CurrencyEntity;
 import tk.project.globus.hw.entity.UserEntity;
@@ -28,31 +32,6 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
   private UserEntity existingUser;
   private CurrencyEntity existingCurrency;
   private BankAccountEntity existingAccount;
-
-  private void saveExistingUser() {
-    existingUser = new UserEntity();
-    existingUser.setName("existing name");
-    existingUser.setEmail("existing_email@mail");
-    userRepository.save(existingUser);
-  }
-
-  private void saveExistingCurrency() {
-    existingCurrency = new CurrencyEntity();
-    existingCurrency.setCharCode("EUR");
-    existingCurrency.setName("name of EUR");
-    existingCurrency.setVunitRate(BigDecimal.valueOf(99.99));
-    currencyRepository.save(existingCurrency);
-  }
-
-  private void saveExistingAccount() {
-    saveExistingUser();
-    saveExistingCurrency();
-    existingAccount = new BankAccountEntity();
-    existingAccount.setBalance(BigDecimal.valueOf(2342.32));
-    existingAccount.setCurrencyCharCode(existingCurrency.getCharCode());
-    existingAccount.setUser(existingUser);
-    accountRepository.save(existingAccount);
-  }
 
   @Test
   @SneakyThrows
@@ -84,9 +63,7 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     assertNotNull(actualAccount.id());
     assertEquals(expectedBalance, actualAccount.balance());
     assertEquals(existingCurrency.getCharCode(), actualAccount.currencyCharCode());
-    assertEquals(existingUser.getId(), actualAccount.user().id());
-    assertEquals(existingUser.getName(), actualAccount.user().name());
-    assertEquals(existingUser.getEmail(), actualAccount.user().email());
+    assertUserEquals(existingUser, actualAccount.user());
   }
 
   @Test
@@ -118,9 +95,7 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     assertEquals(existingAccount.getId(), actualAccount.id());
     assertEquals(expectedBalance, actualAccount.balance());
     assertEquals(existingCurrency.getCharCode(), actualAccount.currencyCharCode());
-    assertEquals(existingUser.getId(), actualAccount.user().id());
-    assertEquals(existingUser.getName(), actualAccount.user().name());
-    assertEquals(existingUser.getEmail(), actualAccount.user().email());
+    assertUserEquals(existingUser, actualAccount.user());
   }
 
   @Test
@@ -154,14 +129,12 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     // THEN
     assertEquals(existingAccount.getId(), actualAccount.id());
     assertEquals(expectedCurCharCode, actualAccount.currencyCharCode());
-    assertEquals(existingUser.getId(), actualAccount.user().id());
-    assertEquals(existingUser.getName(), actualAccount.user().name());
-    assertEquals(existingUser.getEmail(), actualAccount.user().email());
+    assertUserEquals(existingUser, actualAccount.user());
   }
 
   @Test
   @SneakyThrows
-  void findAccount() {
+  void getAccount() {
     // GIVEN
     saveExistingAccount();
 
@@ -180,12 +153,55 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     AccountInfoDto actualAccount = objectMapper.readValue(result, AccountInfoDto.class);
 
     // THEN
-    assertEquals(existingAccount.getId(), actualAccount.id());
-    assertEquals(existingAccount.getBalance(), actualAccount.balance());
-    assertEquals(existingCurrency.getCharCode(), actualAccount.currencyCharCode());
-    assertEquals(existingUser.getId(), actualAccount.user().id());
-    assertEquals(existingUser.getName(), actualAccount.user().name());
-    assertEquals(existingUser.getEmail(), actualAccount.user().email());
+    assertAccountEquals(existingAccount, existingCurrency, existingUser, actualAccount);
+  }
+
+  @Test
+  @SneakyThrows
+  void findAllAccountsByUserId() {
+    // GIVEN
+    saveExistingCurrency();
+    saveExistingUser();
+    BankAccountEntity firstAccount = saveAccount(2342.32, existingUser);
+    BankAccountEntity secondAccount = saveAccount(212.32, existingUser);
+    BankAccountEntity thirdAccount = saveAccount(2.32, existingUser);
+
+    UserEntity otherUser = new UserEntity();
+    otherUser.setName("other name");
+    otherUser.setEmail("other_email@mail");
+    userRepository.save(otherUser);
+    saveAccount(42.3213, otherUser);
+
+    // WHEN
+    String result =
+        mockMvc
+            .perform(
+                get(accountBasePath + "/of-user/" + existingUser.getId())
+                    .contentType("application/json"))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    List<AccountInfoDto> actualAccounts =
+        objectMapper.readValue(result, new TypeReference<List<AccountInfoDto>>() {});
+
+    // THEN
+    assertThat(actualAccounts)
+        .anySatisfy(
+            actualAccount -> {
+              assertAccountEquals(firstAccount, existingCurrency, existingUser, actualAccount);
+            })
+        .anySatisfy(
+            actualAccount -> {
+              assertAccountEquals(secondAccount, existingCurrency, existingUser, actualAccount);
+            })
+        .anySatisfy(
+            actualAccount -> {
+              assertAccountEquals(thirdAccount, existingCurrency, existingUser, actualAccount);
+            })
+        .hasSize(3);
   }
 
   @Test
@@ -209,11 +225,54 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     AccountInfoDto actualAccount = objectMapper.readValue(result, AccountInfoDto.class);
 
     // THEN
-    assertEquals(existingAccount.getId(), actualAccount.id());
-    assertEquals(existingAccount.getBalance(), actualAccount.balance());
-    assertEquals(existingCurrency.getCharCode(), actualAccount.currencyCharCode());
-    assertEquals(existingUser.getId(), actualAccount.user().id());
-    assertEquals(existingUser.getName(), actualAccount.user().name());
-    assertEquals(existingUser.getEmail(), actualAccount.user().email());
+    assertAccountEquals(existingAccount, existingCurrency, existingUser, actualAccount);
+  }
+
+  private void assertAccountEquals(
+      BankAccountEntity expectedAccount,
+      CurrencyEntity expectedCurrency,
+      UserEntity expectedUser,
+      AccountInfoDto actualAccount) {
+
+    assertEquals(expectedAccount.getId(), actualAccount.id());
+    assertEquals(expectedAccount.getBalance(), actualAccount.balance());
+    assertEquals(expectedCurrency.getCharCode(), actualAccount.currencyCharCode());
+    assertUserEquals(expectedUser, actualAccount.user());
+  }
+
+  private void assertUserEquals(UserEntity expectedUser, UserInfoDto actualUser) {
+    assertEquals(expectedUser.getId(), actualUser.id());
+    assertEquals(expectedUser.getName(), actualUser.name());
+    assertEquals(expectedUser.getEmail(), actualUser.email());
+  }
+
+  private void saveExistingUser() {
+    existingUser = new UserEntity();
+    existingUser.setName("existing name");
+    existingUser.setEmail("existing_email@mail");
+    userRepository.save(existingUser);
+  }
+
+  private void saveExistingCurrency() {
+    existingCurrency = new CurrencyEntity();
+    existingCurrency.setCharCode("EUR");
+    existingCurrency.setName("name of EUR");
+    existingCurrency.setVunitRate(BigDecimal.valueOf(99.99));
+    currencyRepository.save(existingCurrency);
+  }
+
+  private void saveExistingAccount() {
+    saveExistingUser();
+    saveExistingCurrency();
+    existingAccount = saveAccount(2342.32, existingUser);
+  }
+
+  private BankAccountEntity saveAccount(Double balance, UserEntity user) {
+    BankAccountEntity account = new BankAccountEntity();
+    account.setBalance(BigDecimal.valueOf(balance));
+    account.setCurrencyCharCode(existingCurrency.getCharCode());
+    account.setUser(user);
+    accountRepository.save(account);
+    return account;
   }
 }

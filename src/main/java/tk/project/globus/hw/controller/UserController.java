@@ -58,7 +58,7 @@ public class UserController {
 
   @GetMapping("/{userId}")
   @Operation(summary = "Получение информации о пользователе")
-  public UserInfoDto find(@PathVariable("userId") UUID userId) {
+  public UserInfoDto getById(@PathVariable("userId") UUID userId) {
     log.info("Получен запрос на получение информации о пользователе с id {}.", userId);
 
     UserInfoDto foundUser = userService.getById(userId);
@@ -69,7 +69,7 @@ public class UserController {
 
   @DeleteMapping("/{userId}")
   @Operation(summary = "Удаление пользователя")
-  public UserInfoDto delete(@PathVariable("userId") UUID userId) {
+  public UserInfoDto deleteById(@PathVariable("userId") UUID userId) {
     log.info("Получен запрос на удаление пользователя с id {}.", userId);
 
     UserInfoDto deletedUser = userService.deleteById(userId);

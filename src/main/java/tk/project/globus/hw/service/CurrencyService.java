@@ -1,12 +1,18 @@
 package tk.project.globus.hw.service;
 
 import java.math.RoundingMode;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import tk.project.globus.hw.dto.currency.CurrencyInfoDto;
 import tk.project.globus.hw.entity.CurrencyChangeable;
 import tk.project.globus.hw.entity.CurrencyEntity;
 import tk.project.globus.hw.exception.CurrencyNotFoundException;
+import tk.project.globus.hw.mapper.CurrencyMapper;
 import tk.project.globus.hw.repository.CurrencyRepository;
 
 @Slf4j
@@ -14,12 +20,37 @@ import tk.project.globus.hw.repository.CurrencyRepository;
 @RequiredArgsConstructor
 public class CurrencyService {
 
+  private final CurrencyMapper currencyMapper;
   private final CurrencyRepository currencyRepository;
+
+  public CurrencyInfoDto getById(UUID currencyId) {
+    CurrencyEntity currency = getCurrencyById(currencyId);
+
+    log.debug("Найдена банковская валюта: {}.", currency);
+    return currencyMapper.toCurrencyInfoDto(currency);
+  }
+
+  public CurrencyInfoDto getByCharCode(String currencyCharCode) {
+    CurrencyEntity currency = getCurrencyByCharCode(currencyCharCode);
+
+    log.debug("Найдена банковская валюта по символьному коду: {}.", currency);
+    return currencyMapper.toCurrencyInfoDto(currency);
+  }
+
+  public List<CurrencyInfoDto> findAll(Pageable pageable) {
+    Page<CurrencyEntity> currencies = currencyRepository.findAll(pageable);
+
+    log.debug(
+        "Найден список банковских валют с размером {} и номером страницы {}.",
+        pageable.getPageSize(),
+        pageable.getPageNumber());
+    return currencies.stream().map(currencyMapper::toCurrencyInfoDto).toList();
+  }
 
   public <T extends CurrencyChangeable> T changeCurrency(T objToChange, String currencyCharCode) {
 
-    CurrencyEntity oldCurrency = getByCharCode(objToChange.getCurrencyCharCode());
-    CurrencyEntity newCurrency = getByCharCode(currencyCharCode);
+    CurrencyEntity oldCurrency = getCurrencyByCharCode(objToChange.getCurrencyCharCode());
+    CurrencyEntity newCurrency = getCurrencyByCharCode(currencyCharCode);
 
     objToChange.setCurrencyCharCode(currencyCharCode);
     objToChange.setBalance(
@@ -32,12 +63,22 @@ public class CurrencyService {
     return objToChange;
   }
 
-  private CurrencyEntity getByCharCode(String charCode) {
+  private CurrencyEntity getCurrencyByCharCode(String charCode) {
     return currencyRepository
         .findByCharCode(charCode)
         .orElseThrow(
             () ->
                 new CurrencyNotFoundException(
-                    String.format("Валюта c символьным кодом %s не найдена.", charCode)));
+                    String.format(
+                        "Банковская валюта c символьным кодом %s не найдена.", charCode)));
+  }
+
+  private CurrencyEntity getCurrencyById(UUID currencyId) {
+    return currencyRepository
+        .findById(currencyId)
+        .orElseThrow(
+            () ->
+                new CurrencyNotFoundException(
+                    String.format("Банковская валюта c id %s не найдена.", currencyId)));
   }
 }
