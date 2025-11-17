@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import tk.project.globus.hw.exception.CurrencySchedulerException;
+import tk.project.globus.hw.exception.CurrenciesPessimisticLockingException;
 import tk.project.globus.hw.integration.BaseIntegrationTest;
 import tk.project.globus.hw.integration.BaseWireMockTest;
 import tk.project.globus.hw.scheduler.CurrencyScheduler;
@@ -116,6 +116,7 @@ class CurrencySchedulerTest extends BaseIntegrationTest implements BaseWireMockT
         .untilAsserted(
             () ->
                 assertThrows(
-                    CurrencySchedulerException.class, () -> currencyScheduler.updateCurrencies()));
+                    CurrenciesPessimisticLockingException.class,
+                    () -> currencyScheduler.updateCurrencies()));
   }
 }
