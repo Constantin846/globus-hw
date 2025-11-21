@@ -23,7 +23,6 @@ public class UserService {
   private final UserMapper userMapper;
   private final UserRepository userRepository;
 
-  @Transactional
   public UserInfoDto create(UserCreateDto newUser) {
     throwExceptionIfUserEmailExists(newUser.email());
 
@@ -55,7 +54,6 @@ public class UserService {
     return userMapper.toUserInfoDto(user);
   }
 
-  @Transactional
   public UserInfoDto deleteById(UUID userId) {
     UserEntity user = getUserById(userId);
     userRepository.delete(user);

@@ -32,7 +32,6 @@ public class BankAccountService {
   private final CurrencyService currencyService;
   private final UserRepository userRepository;
 
-  @Transactional
   public AccountInfoDto create(AccountCreateDto newAccount) {
     throwExceptionIfCurrencyNotExists(newAccount.currencyCharCode());
 
@@ -87,7 +86,6 @@ public class BankAccountService {
     return bankAccountMapper.toAccountsInfoDto(accounts);
   }
 
-  @Transactional
   public AccountInfoDto deleteById(UUID accountId) {
     BankAccountEntity account = getAccountById(accountId);
     bankAccountRepository.delete(account);
