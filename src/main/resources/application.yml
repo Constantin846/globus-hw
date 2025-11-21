@@ -1,0 +1,60 @@
+spring:
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/globus
+    username: globus
+    password: ${DB_PASSWORD}
+
+  liquibase:
+    change-log: classpath:/db.changelog/changelog-main.xml
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    # show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  cloud:
+    openfeign:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+
+feign.client.config.currency-feign-client:
+  connect-timeout: 5000
+  read-timeout: 5000
+  loggerLevel: BASIC
+
+app:
+  controller:
+    base-path: '/api/v1'
+    users-path: '/users'
+    accounts-path: '/accounts'
+    currencies-path: '/currencies'
+
+    endpoints:
+      users: "${app.controller.base-path}${app.controller.users-path}"
+      accounts: "${app.controller.base-path}${app.controller.accounts-path}"
+      currencies: "${app.controller.base-path}${app.controller.currencies-path}"
+
+  zone: 'Europe/Moscow'
+
+  currency-scheduler:
+    enabled: true
+    type: # mock # real scheduler in any case without mock
+    update-currencies:
+      cron: '0 0 4 * * *'
+
+  currency-feign-client:
+    host: https://cbr.ru
+    url: /scripts/XML_daily.asp
+    get-currencies.date-req.pattern: 'dd/MM/yyyy'
+
+  db-init.add-currencies.enabled: true
