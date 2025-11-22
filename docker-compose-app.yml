@@ -1,0 +1,16 @@
+services:
+  globus-service:
+    build: .
+    image: globus-service:v1
+    container_name: globus-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - globus-db
+      - kafka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://globus-db:5432/globus
+      - SPRING_DATASOURCE_USERNAME=globus
+      - SPRING_DATASOURCE_PASSWORD=pass
+      - SPRING_DATASOURCE_DRIVERCLASSNAME=org.postgresql.Driver
+      - KAFKA_BOOTSTRAP_ADDRESS=kafka:29092

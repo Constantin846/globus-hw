@@ -1,16 +1,4 @@
-services:
-  globus-db:
-    image: postgres:17
-    container_name: postgres-globus-db
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_USER=globus
-      - POSTGRES_DB=globus
-    healthcheck:
-      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
-      timeout: 5s
-      interval: 5s
-      retries: 10
-
+include:
+  - docker-compose-kafka.yml
+  - docker-compose-db.yml
+  - docker-compose-app.yml
