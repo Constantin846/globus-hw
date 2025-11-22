@@ -8,7 +8,7 @@ spring:
     enabled: false
   jpa:
     hibernate:
-      ddl-auto: create-drop # BigDecimal scale is 2 if select from database
+      ddl-auto: create-drop
 
 app:
   kafka.enabled: false

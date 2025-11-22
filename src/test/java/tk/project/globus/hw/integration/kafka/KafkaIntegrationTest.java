@@ -29,7 +29,7 @@ class KafkaIntegrationTest extends BaseIntegrationTest implements KafkaTestConta
     // GIVEN
     String expectedCharCode = "SMF";
     String expectedName = "currency";
-    BigDecimal expectedVunitRate = BigDecimal.valueOf(123.12);
+    BigDecimal expectedVunitRate = BigDecimal.valueOf(123.12745);
 
     CurrencySaveDto currencySaveDto =
         new CurrencySaveDto(expectedCharCode, expectedName, expectedVunitRate);
@@ -61,7 +61,7 @@ class KafkaIntegrationTest extends BaseIntegrationTest implements KafkaTestConta
     saveExistingCurrency();
     String expectedCharCode = existingCurrency.getCharCode();
     String expectedName = "currency";
-    BigDecimal expectedVunitRate = BigDecimal.valueOf(123.12);
+    BigDecimal expectedVunitRate = BigDecimal.valueOf(123.12745);
 
     CurrencySaveDto currencySaveDto =
         new CurrencySaveDto(expectedCharCode, expectedName, expectedVunitRate);
@@ -126,15 +126,15 @@ class KafkaIntegrationTest extends BaseIntegrationTest implements KafkaTestConta
     assertEquals(expectedCharCode, actualCurrency.getCharCode());
     assertEquals(expectedName, actualCurrency.getName());
     assertEquals(
-        expectedVunitRate.setScale(2, RoundingMode.HALF_UP),
-        actualCurrency.getVunitRate().setScale(2, RoundingMode.HALF_UP));
+        expectedVunitRate.setScale(10, RoundingMode.HALF_UP),
+        actualCurrency.getVunitRate().setScale(10, RoundingMode.HALF_UP));
   }
 
   private void saveExistingCurrency() {
     existingCurrency = new CurrencyEntity();
     existingCurrency.setCharCode("CHR");
     existingCurrency.setName("name of CHR");
-    existingCurrency.setVunitRate(BigDecimal.valueOf(99.23));
+    existingCurrency.setVunitRate(BigDecimal.valueOf(99.23878));
     currencyRepository.save(existingCurrency);
   }
 }

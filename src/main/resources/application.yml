@@ -48,7 +48,7 @@ app:
 
   kafka:
     enabled: true
-    bootstrap-address: //localhost:9092
+    bootstrap-address: ${KAFKA_BOOTSTRAP_ADDRESS://localhost:9092}
     currency-topic: currency-topic
     group-id: currency-group
 

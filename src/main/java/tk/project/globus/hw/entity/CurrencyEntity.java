@@ -31,7 +31,7 @@ public class CurrencyEntity {
   @Column(name = "name")
   private String name;
 
-  @Column(name = "vunit_rate")
+  @Column(name = "vunit_rate", precision = 20, scale = 10)
   private BigDecimal vunitRate;
 
   @CreatedDate
