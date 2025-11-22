@@ -38,7 +38,7 @@ public class CurrencyController {
 
   @GetMapping("/char-code/{currencyCharCode}")
   @Operation(summary = "Получение информации о банковской валюте по символьному коду")
-  public CurrencyInfoDto getById(@PathVariable("currencyCharCode") String currencyCharCode) {
+  public CurrencyInfoDto getByCharCode(@PathVariable("currencyCharCode") String currencyCharCode) {
     log.info(
         "Получен запрос на получение информации о банковской валюте с символьным кодом {}.",
         currencyCharCode);

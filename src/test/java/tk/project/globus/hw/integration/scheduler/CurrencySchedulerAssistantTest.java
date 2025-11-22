@@ -19,7 +19,7 @@ class CurrencySchedulerAssistantTest {
   private static final String NAME_AUD = "Австралийский доллар";
 
   @Transactional
-  public void saveCurrencyRow() {
+  void saveCurrencyRow() {
     CurrencyEntity currencyAUD = new CurrencyEntity();
     currencyAUD.setName(NAME_AUD);
     currencyAUD.setCharCode(CHAR_CODE_AUD);
@@ -28,7 +28,7 @@ class CurrencySchedulerAssistantTest {
   }
 
   @Transactional
-  public void lockCurrencyRow() throws InterruptedException {
+  void lockCurrencyRow() throws InterruptedException {
     currencyRepository.findAllByCharCodeInForUpdateNoWait(List.of(CHAR_CODE_AUD));
     log.info("start locking currency row");
     Thread.sleep(4_000);

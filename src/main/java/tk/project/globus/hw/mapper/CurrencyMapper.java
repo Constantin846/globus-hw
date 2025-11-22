@@ -8,6 +8,7 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 import tk.project.globus.hw.dto.currency.CurrencyDto;
 import tk.project.globus.hw.dto.currency.CurrencyInfoDto;
+import tk.project.globus.hw.dto.currency.CurrencySaveDto;
 import tk.project.globus.hw.entity.CurrencyEntity;
 
 @Mapper(componentModel = "spring")
@@ -20,6 +21,9 @@ public interface CurrencyMapper {
   CurrencyEntity toCurrencyEntity(CurrencyDto currency);
 
   List<CurrencyEntity> toCurrencyEntities(List<CurrencyDto> currencies);
+
+  @Mapping(target = "id", ignore = true)
+  CurrencyEntity toCurrencyEntity(CurrencySaveDto currency);
 
   CurrencyInfoDto toCurrencyInfoDto(CurrencyEntity currency);
 
