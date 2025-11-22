@@ -19,12 +19,8 @@
             <column name="char_code" type="varchar(3)">
                 <constraints nullable="false" unique="true"/>
             </column>
-            <column name="name" type="varchar(50)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="vunit_rate" type="numeric(20,10)">
-                <constraints nullable="false"/>
-            </column>
+            <column name="name" type="varchar(50)"/>
+            <column name="vunit_rate" type="numeric(20,10)"/>
             <column name="create_date_time" type="timestamp">
                 <constraints nullable="false"/>
             </column>
