@@ -46,12 +46,17 @@ app:
       accounts: "${app.controller.base-path}${app.controller.accounts-path}"
       currencies: "${app.controller.base-path}${app.controller.currencies-path}"
 
+  kafka:
+    enabled: true
+    bootstrap-address: //localhost:9092
+    currency-topic: currency-topic
+    group-id: currency-group
+
   headers:
     user-email: 'X-User-Email'
     password: 'X-Password'
 
   zone: 'Europe/Moscow'
-
   currency-scheduler:
     enabled: true
     type: # mock # real scheduler in any case without mock
@@ -64,3 +69,7 @@ app:
     get-currencies.date-req.pattern: 'dd/MM/yyyy'
 
   db-init.add-currencies.enabled: true
+
+logging:
+  level:
+    org.apache.kafka: WARN

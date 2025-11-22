@@ -28,10 +28,10 @@ public class CurrencyEntity {
   @Column(name = "char_code", updatable = false, nullable = false, unique = true)
   private String charCode = "RUB";
 
-  @Column(name = "name", updatable = false, nullable = false)
+  @Column(name = "name")
   private String name;
 
-  @Column(name = "vunit_rate", nullable = false)
+  @Column(name = "vunit_rate")
   private BigDecimal vunitRate;
 
   @CreatedDate

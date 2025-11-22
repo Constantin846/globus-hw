@@ -22,6 +22,17 @@ public interface CurrencyRepository extends JpaRepository<CurrencyEntity, UUID> 
           """
           SELECT *
           FROM currencies c
+          WHERE c.char_code = :charCode
+          FOR UPDATE
+          """,
+      nativeQuery = true)
+  Optional<CurrencyEntity> findByCharCodeForUpdate(@Param("charCode") String charCode);
+
+  @Query(
+      value =
+          """
+          SELECT *
+          FROM currencies c
           WHERE c.char_code IN :charCodes
           FOR UPDATE NOWAIT
           """,
