@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="v1-2" author="Author">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="bank_accounts"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="bank_accounts">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="balance" type="numeric(20,10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency_char_code" type="varchar(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date_time" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_date_time" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="v1-2-fk" author="Author">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_bank_accounts_users"/>
+            </not>
+        </preConditions>
+
+        <addForeignKeyConstraint baseTableName="bank_accounts" baseColumnNames="user_id"
+                                 constraintName="fk_bank_accounts_users"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 deleteCascade="true"/>
+    </changeSet>
+
+</databaseChangeLog>
