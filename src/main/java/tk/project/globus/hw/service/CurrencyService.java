@@ -31,7 +31,7 @@ public class CurrencyService {
   @Transactional
   public void save(CurrencySaveDto currencySaveDto) {
     Optional<CurrencyEntity> existingCurrencyOp =
-        currencyRepository.findByCharCodeForUpdate(currencySaveDto.charCode());
+        currencyRepository.findByCharCodeLock(currencySaveDto.charCode());
 
     CurrencyEntity currencyToSave =
         existingCurrencyOp

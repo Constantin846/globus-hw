@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -38,6 +39,7 @@ public class CurrencyEntity {
   @Column(name = "create_date_time", updatable = false, nullable = false)
   private Instant createDateTime;
 
+  @Version
   @LastModifiedDate
   @Column(name = "update_date_time", nullable = false)
   private Instant updateDateTime;
