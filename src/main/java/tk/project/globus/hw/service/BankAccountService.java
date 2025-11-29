@@ -1,5 +1,7 @@
 package tk.project.globus.hw.service;
 
+import static tk.project.globus.hw.utility.UserAccessChecker.checkUserAccess;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -15,7 +17,6 @@ import tk.project.globus.hw.entity.BankAccountEntity;
 import tk.project.globus.hw.entity.UserEntity;
 import tk.project.globus.hw.exception.BankAccountNotFoundException;
 import tk.project.globus.hw.exception.CurrencyNotFoundException;
-import tk.project.globus.hw.exception.UserNotFoundException;
 import tk.project.globus.hw.mapper.BankAccountMapper;
 import tk.project.globus.hw.repository.BankAccountRepository;
 import tk.project.globus.hw.repository.CurrencyRepository;
@@ -32,12 +33,11 @@ public class BankAccountService {
   private final CurrencyService currencyService;
   private final UserRepository userRepository;
 
-  public AccountInfoDto create(AccountCreateDto newAccount) {
+  public AccountInfoDto create(AccountCreateDto newAccount, UserEntity authUser) {
     throwExceptionIfCurrencyNotExists(newAccount.currencyCharCode());
 
-    UserEntity user = getUserById(newAccount.userId());
     BankAccountEntity accountEntity = bankAccountMapper.toBankAccountEntity(newAccount);
-    accountEntity.setUser(user);
+    accountEntity.setUser(authUser);
     BankAccountEntity savedAccount = bankAccountRepository.save(accountEntity);
 
     log.debug("Сохранен банковский счет: {}.", savedAccount);
@@ -45,8 +45,9 @@ public class BankAccountService {
   }
 
   @Transactional
-  public AccountInfoDto update(AccountUpdateDto accountUpdateDto) {
+  public AccountInfoDto update(AccountUpdateDto accountUpdateDto, UserEntity authUser) {
     BankAccountEntity existingAccount = getAccountById(accountUpdateDto.id());
+    checkUserAccess(authUser, existingAccount);
     BankAccountEntity accountToUpdate =
         updateAccountFields(
             existingAccount, bankAccountMapper.toBankAccountEntity(accountUpdateDto));
@@ -58,10 +59,12 @@ public class BankAccountService {
   }
 
   @Transactional
-  public AccountInfoDto changeCurrency(UUID accountId, String currencyCharCode) {
+  public AccountInfoDto changeCurrency(
+      UUID accountId, String currencyCharCode, UserEntity authUser) {
     throwExceptionIfCurrencyNotExists(currencyCharCode);
 
     BankAccountEntity existingAccount = getAccountById(accountId);
+    checkUserAccess(authUser, existingAccount);
     BankAccountEntity accountToUpdate = changeCurrency(existingAccount, currencyCharCode);
     BankAccountEntity updatedAccount = bankAccountRepository.save(accountToUpdate);
 
@@ -69,8 +72,9 @@ public class BankAccountService {
     return bankAccountMapper.toAccountInfoDto(updatedAccount);
   }
 
-  public AccountInfoDto getById(UUID accountId, String currencyCharCode) {
+  public AccountInfoDto getById(UUID accountId, String currencyCharCode, UserEntity authUser) {
     BankAccountEntity account = getAccountById(accountId);
+    checkUserAccess(authUser, account);
 
     log.debug("Найден банковский счет: {}.", account);
 
@@ -86,21 +90,13 @@ public class BankAccountService {
     return bankAccountMapper.toAccountsInfoDto(accounts);
   }
 
-  public AccountInfoDto deleteById(UUID accountId) {
+  public AccountInfoDto deleteById(UUID accountId, UserEntity authUser) {
     BankAccountEntity account = getAccountById(accountId);
+    checkUserAccess(authUser, account);
     bankAccountRepository.delete(account);
 
     log.debug("Удален банковский счет: {}.", account);
     return bankAccountMapper.toAccountInfoDto(account);
-  }
-
-  private UserEntity getUserById(UUID userId) {
-    return userRepository
-        .findById(userId)
-        .orElseThrow(
-            () ->
-                new UserNotFoundException(
-                    String.format("Пользователь с id %s не найден.", userId)));
   }
 
   private BankAccountEntity getAccountById(UUID accountId) {

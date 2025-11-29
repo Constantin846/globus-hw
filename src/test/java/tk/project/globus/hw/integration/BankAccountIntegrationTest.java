@@ -16,6 +16,7 @@ import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
+import tk.project.globus.hw.dto.ErrorResponse;
 import tk.project.globus.hw.dto.account.AccountCreateDto;
 import tk.project.globus.hw.dto.account.AccountInfoDto;
 import tk.project.globus.hw.dto.account.AccountUpdateDto;
@@ -23,11 +24,12 @@ import tk.project.globus.hw.dto.user.UserInfoDto;
 import tk.project.globus.hw.entity.BankAccountEntity;
 import tk.project.globus.hw.entity.CurrencyEntity;
 import tk.project.globus.hw.entity.UserEntity;
+import tk.project.globus.hw.exception.UserNotAccessException;
 
 class BankAccountIntegrationTest extends BaseIntegrationTest {
 
   @Value("${app.controller.endpoints.accounts}")
-  private String accountBasePath;
+  private String accountPath;
 
   private UserEntity existingUser;
   private CurrencyEntity existingCurrency;
@@ -42,13 +44,15 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
 
     BigDecimal expectedBalance = BigDecimal.valueOf(4587.87);
     AccountCreateDto accountCreateDto =
-        new AccountCreateDto(expectedBalance, existingCurrency.getCharCode(), existingUser.getId());
+        new AccountCreateDto(expectedBalance, existingCurrency.getCharCode());
 
     // WHEN
     String result =
         mockMvc
             .perform(
-                post(accountBasePath)
+                post(accountPath)
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(accountCreateDto)))
             .andDo(print())
@@ -80,7 +84,9 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     String result =
         mockMvc
             .perform(
-                patch(accountBasePath)
+                patch(accountPath)
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(accountUpdateDto)))
             .andDo(print())
@@ -100,6 +106,43 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @SneakyThrows
+  void updateAccountFailedIfUserNotAccess() {
+    // GIVEN
+    saveExistingAccount();
+
+    BigDecimal expectedBalance = BigDecimal.valueOf(4587.87);
+    AccountUpdateDto accountUpdateDto =
+        new AccountUpdateDto(existingAccount.getId(), expectedBalance, null);
+
+    UserEntity otherUser = new UserEntity();
+    otherUser.setName("other name");
+    otherUser.setEmail("other_email@mail");
+    otherUser.setPassword("other password");
+    userRepository.save(otherUser);
+
+    // WHEN
+    String result =
+        mockMvc
+            .perform(
+                patch(accountPath)
+                    .header(userEmailHeaderKey, otherUser.getEmail())
+                    .header(passwordHeaderKey, otherUser.getPassword())
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(accountUpdateDto)))
+            .andDo(print())
+            .andExpect(status().isForbidden())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    ErrorResponse errorResponse = objectMapper.readValue(result, ErrorResponse.class);
+
+    // THEN
+    assertEquals(UserNotAccessException.class.getSimpleName(), errorResponse.exceptionName());
+  }
+
+  @Test
+  @SneakyThrows
   void changeCurrencyOfAccount() {
     // GIVEN
     saveExistingAccount();
@@ -115,7 +158,9 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     String result =
         mockMvc
             .perform(
-                patch(accountBasePath + "/" + existingAccount.getId())
+                patch(accountPath + "/" + existingAccount.getId())
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
                     .contentType("application/json")
                     .param("currency", expectedCurCharCode))
             .andDo(print())
@@ -142,7 +187,9 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     String result =
         mockMvc
             .perform(
-                get(accountBasePath + "/" + existingAccount.getId())
+                get(accountPath + "/" + existingAccount.getId())
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
                     .contentType("application/json"))
             .andDo(print())
             .andExpect(status().isOk())
@@ -158,7 +205,7 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @SneakyThrows
-  void findAllAccountsByUserId() {
+  void findAllAccountsOfUser() {
     // GIVEN
     saveExistingCurrency();
     saveExistingUser();
@@ -169,6 +216,7 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     UserEntity otherUser = new UserEntity();
     otherUser.setName("other name");
     otherUser.setEmail("other_email@mail");
+    otherUser.setPassword("other password");
     userRepository.save(otherUser);
     saveAccount(42.3213, otherUser);
 
@@ -176,7 +224,9 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     String result =
         mockMvc
             .perform(
-                get(accountBasePath + "/of-user/" + existingUser.getId())
+                get(accountPath)
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
                     .contentType("application/json"))
             .andDo(print())
             .andExpect(status().isOk())
@@ -214,7 +264,9 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     String result =
         mockMvc
             .perform(
-                delete(accountBasePath + "/" + existingAccount.getId())
+                delete(accountPath + "/" + existingAccount.getId())
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
                     .contentType("application/json"))
             .andDo(print())
             .andExpect(status().isOk())
@@ -250,6 +302,7 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
     existingUser = new UserEntity();
     existingUser.setName("existing name");
     existingUser.setEmail("existing_email@mail");
+    existingUser.setPassword("password");
     userRepository.save(existingUser);
   }
 

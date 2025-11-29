@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Schema(description = "DTO для запроса на создание банковского счета")
 public record AccountCreateDto(
@@ -16,6 +15,4 @@ public record AccountCreateDto(
     @NotBlank
         @Size(min = 1, max = 20)
         @Schema(description = "Валюта банковского счета", requiredMode = REQUIRED)
-        String currencyCharCode,
-    @NotNull @Schema(description = "Id пользователя банковского счета", requiredMode = REQUIRED)
-        UUID userId) {}
+        String currencyCharCode) {}

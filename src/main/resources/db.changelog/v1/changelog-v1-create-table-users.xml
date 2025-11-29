@@ -22,6 +22,9 @@
             <column name="email" type="varchar(50)">
                 <constraints nullable="false" unique="true"/>
             </column>
+            <column name="password" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
             <column name="create_date_time" type="timestamp">
                 <constraints nullable="false"/>
             </column>
