@@ -21,9 +21,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import tk.project.globus.hw.annotation.AuthenticatedUser;
 import tk.project.globus.hw.dto.account.AccountCreateDto;
 import tk.project.globus.hw.dto.account.AccountInfoDto;
 import tk.project.globus.hw.dto.account.AccountUpdateDto;
+import tk.project.globus.hw.entity.UserEntity;
 import tk.project.globus.hw.service.BankAccountService;
 
 @Slf4j
@@ -38,14 +40,16 @@ public class BankAccountController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(summary = "Создание банковского счета")
-  public AccountInfoDto create(@Valid @RequestBody AccountCreateDto account) {
+  public AccountInfoDto create(
+      @Valid @RequestBody AccountCreateDto account, @AuthenticatedUser UserEntity authUser) {
+
     log.info(
         "Получен запрос на создание банковского счета с балансом {} {} и id пользователя {}.",
         account.balance(),
         account.currencyCharCode(),
-        account.userId());
+        authUser.getId());
 
-    AccountInfoDto savedAccount = bankAccountService.create(account);
+    AccountInfoDto savedAccount = bankAccountService.create(account, authUser);
 
     log.info("Выполнен запрос на создание банковского счета: {}", savedAccount);
     return savedAccount;
@@ -53,10 +57,12 @@ public class BankAccountController {
 
   @PatchMapping
   @Operation(summary = "Изменение банковского счета")
-  public AccountInfoDto update(@Valid @RequestBody AccountUpdateDto account) {
+  public AccountInfoDto update(
+      @Valid @RequestBody AccountUpdateDto account, @AuthenticatedUser UserEntity authUser) {
+
     log.info("Получен запрос на изменение банковского счета: {}.", account);
 
-    AccountInfoDto updatedAccount = bankAccountService.update(account);
+    AccountInfoDto updatedAccount = bankAccountService.update(account, authUser);
 
     log.info("Выполнен запрос на изменение банковского счета: {}.", updatedAccount);
     return updatedAccount;
@@ -65,11 +71,14 @@ public class BankAccountController {
   @PatchMapping("/{accountId}")
   @Operation(summary = "Изменение валюты банковского счета")
   public AccountInfoDto changeCurrency(
-      @PathVariable("accountId") UUID accountId, @RequestParam("currency") String currency) {
+      @PathVariable("accountId") UUID accountId,
+      @RequestParam("currency") String currency,
+      @AuthenticatedUser UserEntity authUser) {
 
     log.info("Получен запрос на изменение валюты банковского счета c id: {}.", accountId);
 
-    AccountInfoDto updatedAccount = bankAccountService.changeCurrency(accountId, currency);
+    AccountInfoDto updatedAccount =
+        bankAccountService.changeCurrency(accountId, currency, authUser);
 
     log.info("Выполнен запрос на изменение валюты банковского счета: {}.", updatedAccount);
     return updatedAccount;
@@ -79,40 +88,44 @@ public class BankAccountController {
   @Operation(summary = "Получение информации о банковском счете")
   public AccountInfoDto getById(
       @PathVariable("accountId") UUID accountId,
-      @RequestParam(value = "currency", required = false) String currency) {
+      @RequestParam(value = "currency", required = false) String currency,
+      @AuthenticatedUser UserEntity authUser) {
 
     log.info("Получен запрос на получение информации о банковском счете с id {}.", accountId);
 
-    AccountInfoDto foundAccount = bankAccountService.getById(accountId, currency);
+    AccountInfoDto foundAccount = bankAccountService.getById(accountId, currency, authUser);
 
     log.info("Выполнен запрос на получение информации о банковском счете: {}.", foundAccount);
     return foundAccount;
   }
 
-  @GetMapping("of-user/{userId}")
+  @GetMapping
   @Operation(summary = "Получение информации о банковских счетах пользователя")
   public List<AccountInfoDto> findAllByUserId(
-      @PathVariable("userId") UUID userId,
+      @AuthenticatedUser UserEntity authUser,
       @PageableDefault(size = 10, sort = "balance", direction = Sort.Direction.DESC)
           Pageable pageable) {
 
     log.info(
-        "Получен запрос на получение информации о банковских счетах пользователя с id {}.", userId);
+        "Получен запрос на получение информации о банковских счетах пользователя с id {}.",
+        authUser.getId());
 
-    List<AccountInfoDto> accounts = bankAccountService.findAllByUserId(userId, pageable);
+    List<AccountInfoDto> accounts = bankAccountService.findAllByUserId(authUser.getId(), pageable);
 
     log.info(
         "Выполнен запрос на получение информации о банковских счетах пользователя с id {}.",
-        userId);
+        authUser.getId());
     return accounts;
   }
 
   @DeleteMapping("/{accountId}")
   @Operation(summary = "Удаление банковского счета")
-  public AccountInfoDto deleteById(@PathVariable("accountId") UUID accountId) {
+  public AccountInfoDto deleteById(
+      @PathVariable("accountId") UUID accountId, @AuthenticatedUser UserEntity authUser) {
+
     log.info("Получен запрос на удаление банковского счета с id {}.", accountId);
 
-    AccountInfoDto deletedAccount = bankAccountService.deleteById(accountId);
+    AccountInfoDto deletedAccount = bankAccountService.deleteById(accountId, authUser);
 
     log.info("Выполнен запрос на удаление банковского счета: {}.", deletedAccount);
     return deletedAccount;

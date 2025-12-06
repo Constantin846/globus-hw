@@ -1,5 +1,7 @@
 package tk.project.globus.hw.service;
 
+import static tk.project.globus.hw.utility.UserAccessChecker.checkUserAccess;
+
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import tk.project.globus.hw.exception.UserConflictException;
 import tk.project.globus.hw.exception.UserNotFoundException;
 import tk.project.globus.hw.mapper.UserMapper;
 import tk.project.globus.hw.repository.UserRepository;
+import tk.project.globus.hw.utility.PasswordEncoder;
 
 @Slf4j
 @Service
@@ -27,6 +30,7 @@ public class UserService {
     throwExceptionIfUserEmailExists(newUser.email());
 
     UserEntity userEntity = userMapper.toUserEntity(newUser);
+    userEntity.setPassword(PasswordEncoder.encode(newUser.password()));
     UserEntity savedUser = userRepository.save(userEntity);
 
     log.debug("Сохранен пользователь: {}.", savedUser);
@@ -34,10 +38,11 @@ public class UserService {
   }
 
   @Transactional
-  public UserInfoDto update(UserUpdateDto userUpdateDto) {
-    throwExceptionIfUserEmailExists(userUpdateDto.email());
+  public UserInfoDto update(UserUpdateDto userUpdateDto, UserEntity authUser) {
 
     UserEntity existingUser = getUserById(userUpdateDto.id());
+    checkUserAccess(authUser, existingUser);
+
     UserEntity userToUpdate =
         updateUserFields(existingUser, userMapper.toUserEntity(userUpdateDto));
 
@@ -47,15 +52,15 @@ public class UserService {
     return userMapper.toUserInfoDto(updatedUser);
   }
 
-  public UserInfoDto getById(UUID userId) {
-    UserEntity user = getUserById(userId);
+  public UserInfoDto getAuthUser(UserEntity authUser) {
+    UserEntity user = getUserById(authUser.getId());
 
     log.debug("Найден пользователь: {}.", user);
     return userMapper.toUserInfoDto(user);
   }
 
-  public UserInfoDto deleteById(UUID userId) {
-    UserEntity user = getUserById(userId);
+  public UserInfoDto deleteAuthUser(UserEntity authUser) {
+    UserEntity user = getUserById(authUser.getId());
     userRepository.delete(user);
 
     log.debug("Удален пользователь: {}.", user);
@@ -82,7 +87,9 @@ public class UserService {
     if (Objects.nonNull(newUser.getName())) {
       oldUser.setName(newUser.getName());
     }
-    if (Objects.nonNull(newUser.getEmail())) {
+    if (Objects.nonNull(newUser.getEmail())
+        && !Objects.equals(oldUser.getEmail(), newUser.getEmail())) {
+      throwExceptionIfUserEmailExists(newUser.getEmail());
       oldUser.setEmail(newUser.getEmail());
     }
     return oldUser;

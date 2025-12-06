@@ -17,4 +17,8 @@ public record UserCreateDto(
         @Email
         @Size(min = 1, max = 50)
         @Schema(description = "Почта пользователя", requiredMode = REQUIRED)
-        String email) {}
+        String email,
+    @NotBlank
+        @Size(min = 1, max = 50)
+        @Schema(description = "Пароль пользователя", requiredMode = REQUIRED)
+        String password) {}

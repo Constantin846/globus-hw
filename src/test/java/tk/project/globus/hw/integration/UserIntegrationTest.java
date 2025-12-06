@@ -9,22 +9,27 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.UUID;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mock.web.MockHttpSession;
 import tk.project.globus.hw.dto.ErrorResponse;
 import tk.project.globus.hw.dto.user.UserCreateDto;
 import tk.project.globus.hw.dto.user.UserInfoDto;
 import tk.project.globus.hw.dto.user.UserUpdateDto;
 import tk.project.globus.hw.entity.UserEntity;
 import tk.project.globus.hw.exception.UserConflictException;
+import tk.project.globus.hw.exception.UserNotAccessException;
 import tk.project.globus.hw.exception.UserNotFoundException;
+import tk.project.globus.hw.exception.UserUnauthorizedException;
 
 class UserIntegrationTest extends BaseIntegrationTest {
 
   @Value("${app.controller.endpoints.users}")
-  private String userBasePath;
+  private String userPath;
+
+  @Value("${app.controller.endpoints.registration}")
+  private String registrationPath;
 
   private UserEntity existingUser;
 
@@ -32,6 +37,7 @@ class UserIntegrationTest extends BaseIntegrationTest {
     existingUser = new UserEntity();
     existingUser.setName("existing name");
     existingUser.setEmail("existing_email@mail");
+    existingUser.setPassword("password");
     userRepository.save(existingUser);
   }
 
@@ -41,13 +47,14 @@ class UserIntegrationTest extends BaseIntegrationTest {
     // GIVEN
     String expectedUserName = "name";
     String expectedUserEmail = "email@mail";
-    UserCreateDto userCreateDto = new UserCreateDto(expectedUserName, expectedUserEmail);
+    String password = "password";
+    UserCreateDto userCreateDto = new UserCreateDto(expectedUserName, expectedUserEmail, password);
 
     // WHEN
     String result =
         mockMvc
             .perform(
-                post(userBasePath)
+                post(registrationPath)
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(userCreateDto)))
             .andDo(print())
@@ -69,13 +76,13 @@ class UserIntegrationTest extends BaseIntegrationTest {
   void createUserFailedIfUserEmailAlreadyExists() {
     // GIVEN
     saveExistingUser();
-    UserCreateDto userCreateDto = new UserCreateDto("other name", existingUser.getEmail());
+    UserCreateDto userCreateDto = new UserCreateDto("other name", existingUser.getEmail(), "pass");
 
     // WHEN
     String result =
         mockMvc
             .perform(
-                post(userBasePath)
+                post(registrationPath)
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(userCreateDto)))
             .andDo(print())
@@ -104,7 +111,9 @@ class UserIntegrationTest extends BaseIntegrationTest {
     String result =
         mockMvc
             .perform(
-                patch(userBasePath)
+                patch(userPath)
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(userUpdateDto)))
             .andDo(print())
@@ -123,6 +132,42 @@ class UserIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @SneakyThrows
+  void updateUserFailedIfUserNotAccess() {
+    // GIVEN
+    saveExistingUser();
+
+    UserUpdateDto userUpdateDto =
+        new UserUpdateDto(existingUser.getId(), "new name", "new_email@mail");
+
+    UserEntity otherUser = new UserEntity();
+    otherUser.setName("other name");
+    otherUser.setEmail("other_email@mail");
+    otherUser.setPassword("other password");
+    userRepository.save(otherUser);
+
+    // WHEN
+    String result =
+        mockMvc
+            .perform(
+                patch(userPath)
+                    .header(userEmailHeaderKey, otherUser.getEmail())
+                    .header(passwordHeaderKey, otherUser.getPassword())
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(userUpdateDto)))
+            .andDo(print())
+            .andExpect(status().isForbidden())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    ErrorResponse errorResponse = objectMapper.readValue(result, ErrorResponse.class);
+
+    // THEN
+    assertEquals(UserNotAccessException.class.getSimpleName(), errorResponse.exceptionName());
+  }
+
+  @Test
+  @SneakyThrows
   void getUser() {
     // GIVEN
     saveExistingUser();
@@ -130,7 +175,11 @@ class UserIntegrationTest extends BaseIntegrationTest {
     // WHEN
     String result =
         mockMvc
-            .perform(get(userBasePath + "/" + existingUser.getId()).contentType("application/json"))
+            .perform(
+                get(userPath)
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
+                    .contentType("application/json"))
             .andDo(print())
             .andExpect(status().isOk())
             .andReturn()
@@ -148,10 +197,29 @@ class UserIntegrationTest extends BaseIntegrationTest {
   @Test
   @SneakyThrows
   void getUserFailedIfUserNotFound() {
+    // GIVEN
+    saveExistingUser();
+
+    MockHttpSession session = new MockHttpSession();
+    mockMvc
+        .perform(
+            get(userPath)
+                .session(session)
+                .header(userEmailHeaderKey, existingUser.getEmail())
+                .header(passwordHeaderKey, existingUser.getPassword())
+                .contentType("application/json"))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+
+    userRepository.delete(existingUser);
+
     // WHEN
     String result =
         mockMvc
-            .perform(get(userBasePath + "/" + UUID.randomUUID()).contentType("application/json"))
+            .perform(get(userPath).session(session).contentType("application/json"))
             .andDo(print())
             .andExpect(status().isNotFound())
             .andReturn()
@@ -166,6 +234,77 @@ class UserIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @SneakyThrows
+  void getUserFailedIfUserUnauthorized() {
+    // WHEN
+    String result =
+        mockMvc
+            .perform(get(userPath).contentType("application/json"))
+            .andDo(print())
+            .andExpect(status().isUnauthorized())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    ErrorResponse errorResponse = objectMapper.readValue(result, ErrorResponse.class);
+
+    // THEN
+    assertEquals(UserUnauthorizedException.class.getSimpleName(), errorResponse.exceptionName());
+  }
+
+  @Test
+  @SneakyThrows
+  void getUserFailedIfUserEmailIncorrect() {
+    // GIVEN
+    saveExistingUser();
+
+    // WHEN
+    String result =
+        mockMvc
+            .perform(
+                get(userPath)
+                    .header(userEmailHeaderKey, "incorrect_email@mail.em")
+                    .header(passwordHeaderKey, existingUser.getPassword())
+                    .contentType("application/json"))
+            .andDo(print())
+            .andExpect(status().isUnauthorized())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    ErrorResponse errorResponse = objectMapper.readValue(result, ErrorResponse.class);
+
+    // THEN
+    assertEquals(UserUnauthorizedException.class.getSimpleName(), errorResponse.exceptionName());
+  }
+
+  @Test
+  @SneakyThrows
+  void getUserFailedIfUserPasswordIncorrect() {
+    // GIVEN
+    saveExistingUser();
+
+    // WHEN
+    String result =
+        mockMvc
+            .perform(
+                get(userPath)
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, "incorrect password")
+                    .contentType("application/json"))
+            .andDo(print())
+            .andExpect(status().isUnauthorized())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    ErrorResponse errorResponse = objectMapper.readValue(result, ErrorResponse.class);
+
+    // THEN
+    assertEquals(UserUnauthorizedException.class.getSimpleName(), errorResponse.exceptionName());
+  }
+
+  @Test
+  @SneakyThrows
   void deleteUser() {
     // GIVEN
     saveExistingUser();
@@ -174,7 +313,10 @@ class UserIntegrationTest extends BaseIntegrationTest {
     String result =
         mockMvc
             .perform(
-                delete(userBasePath + "/" + existingUser.getId()).contentType("application/json"))
+                delete(userPath)
+                    .header(userEmailHeaderKey, existingUser.getEmail())
+                    .header(passwordHeaderKey, existingUser.getPassword())
+                    .contentType("application/json"))
             .andDo(print())
             .andExpect(status().isOk())
             .andReturn()

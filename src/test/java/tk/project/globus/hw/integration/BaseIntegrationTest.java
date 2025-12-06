@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -18,6 +19,12 @@ import tk.project.globus.hw.repository.UserRepository;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 public class BaseIntegrationTest {
+
+  @Value("${app.headers.user-email}")
+  protected String userEmailHeaderKey;
+
+  @Value("${app.headers.password}")
+  protected String passwordHeaderKey;
 
   @Autowired protected ObjectMapper objectMapper;
   @Autowired protected MockMvc mockMvc;

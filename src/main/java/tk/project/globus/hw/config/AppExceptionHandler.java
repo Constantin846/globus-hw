@@ -12,7 +12,9 @@ import tk.project.globus.hw.dto.ErrorResponse;
 import tk.project.globus.hw.exception.BankAccountNotFoundException;
 import tk.project.globus.hw.exception.CurrencyNotFoundException;
 import tk.project.globus.hw.exception.UserConflictException;
+import tk.project.globus.hw.exception.UserNotAccessException;
 import tk.project.globus.hw.exception.UserNotFoundException;
+import tk.project.globus.hw.exception.UserUnauthorizedException;
 
 @Slf4j
 @RestControllerAdvice
@@ -33,6 +35,18 @@ public class AppExceptionHandler {
   @ExceptionHandler(UserConflictException.class)
   public ErrorResponse handleUserConflict(UserConflictException ex) {
     return buildErrorResponse(ex, HttpStatus.CONFLICT);
+  }
+
+  @ResponseStatus(HttpStatus.UNAUTHORIZED)
+  @ExceptionHandler(UserUnauthorizedException.class)
+  public ErrorResponse handleUserUnauthorized(UserUnauthorizedException ex) {
+    return buildErrorResponse(ex, HttpStatus.UNAUTHORIZED);
+  }
+
+  @ResponseStatus(HttpStatus.FORBIDDEN)
+  @ExceptionHandler(UserNotAccessException.class)
+  public ErrorResponse handleUserNotAccess(UserNotAccessException ex) {
+    return buildErrorResponse(ex, HttpStatus.FORBIDDEN);
   }
 
   @ResponseStatus(HttpStatus.BAD_REQUEST)
