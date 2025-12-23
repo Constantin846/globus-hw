@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -287,7 +288,9 @@ class BankAccountIntegrationTest extends BaseIntegrationTest {
       AccountInfoDto actualAccount) {
 
     assertEquals(expectedAccount.getId(), actualAccount.id());
-    assertEquals(expectedAccount.getBalance(), actualAccount.balance());
+    assertEquals(
+        expectedAccount.getBalance().setScale(5, RoundingMode.HALF_UP),
+        actualAccount.balance().setScale(5, RoundingMode.HALF_UP));
     assertEquals(expectedCurrency.getCharCode(), actualAccount.currencyCharCode());
     assertUserEquals(expectedUser, actualAccount.user());
   }

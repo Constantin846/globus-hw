@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.stereotype.Component;
 import tk.project.globus.hw.entity.CurrencyEntity;
@@ -13,6 +14,7 @@ import tk.project.globus.hw.scheduler.CurrencyScheduler;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean(CurrencyScheduler.class)
 @ConditionalOnBooleanProperty(value = "app.db-init.add-currencies.enabled", matchIfMissing = true)
 public class DbInit {
 

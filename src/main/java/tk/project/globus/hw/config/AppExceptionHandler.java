@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tk.project.globus.hw.dto.ErrorResponse;
 import tk.project.globus.hw.exception.BankAccountNotFoundException;
 import tk.project.globus.hw.exception.CurrencyNotFoundException;
+import tk.project.globus.hw.exception.KafkaSendEventException;
 import tk.project.globus.hw.exception.UserConflictException;
 import tk.project.globus.hw.exception.UserNotAccessException;
 import tk.project.globus.hw.exception.UserNotFoundException;
@@ -61,10 +62,11 @@ public class AppExceptionHandler {
     return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, message);
   }
 
-  @ExceptionHandler(Exception.class)
+  @ExceptionHandler(exception = {Exception.class, KafkaSendEventException.class})
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public ErrorResponse uncaughtExceptionHandler(Exception ex) {
-    return buildErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR);
+    return buildErrorResponse(
+        ex, HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.name());
   }
 
   private ErrorResponse buildErrorResponse(Exception ex, HttpStatus status) {

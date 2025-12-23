@@ -15,9 +15,9 @@ import tk.project.globus.hw.repository.BankAccountRepository;
 import tk.project.globus.hw.repository.CurrencyRepository;
 import tk.project.globus.hw.repository.UserRepository;
 
-@SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class BaseIntegrationTest {
 
   @Value("${app.headers.user-email}")

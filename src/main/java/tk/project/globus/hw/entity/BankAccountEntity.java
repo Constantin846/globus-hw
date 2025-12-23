@@ -27,7 +27,7 @@ public class BankAccountEntity implements CurrencyChangeable {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "balance", nullable = false)
+  @Column(name = "balance", precision = 20, scale = 10, nullable = false)
   private BigDecimal balance;
 
   @Column(name = "currency_char_code", nullable = false)
