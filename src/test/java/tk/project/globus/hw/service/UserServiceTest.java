@@ -21,6 +21,7 @@ import tk.project.globus.hw.exception.UserConflictException;
 import tk.project.globus.hw.exception.UserNotFoundException;
 import tk.project.globus.hw.mapper.UserMapper;
 import tk.project.globus.hw.repository.UserRepository;
+import tk.project.globus.hw.utility.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -36,9 +37,12 @@ class UserServiceTest {
     UUID expectedUserId = UUID.randomUUID();
     String expectedUserName = "name";
     String expectedUserEmail = "email@mail";
+    String uncodedPassword = "password";
 
-    UserCreateDto userCreateDto = new UserCreateDto(expectedUserName, expectedUserEmail);
+    UserCreateDto userCreateDto =
+        new UserCreateDto(expectedUserName, expectedUserEmail, uncodedPassword);
     UserEntity userToSave = userMapper.toUserEntity(userCreateDto);
+    userToSave.setPassword(PasswordEncoder.encode(uncodedPassword));
 
     UserEntity savedUser = new UserEntity();
     savedUser.setId(expectedUserId);
@@ -61,7 +65,7 @@ class UserServiceTest {
   void createUserFailedIfEmailAlreadyExists() {
     // GIVEN
     String expectedUserEmail = "email@mail";
-    UserCreateDto userCreateDto = new UserCreateDto("some name", expectedUserEmail);
+    UserCreateDto userCreateDto = new UserCreateDto("some name", expectedUserEmail, "password");
 
     UserEntity existingUser = new UserEntity();
     existingUser.setEmail(expectedUserEmail);
@@ -95,7 +99,7 @@ class UserServiceTest {
     when(userRepositoryMock.save(userToSave)).thenReturn(savedUser);
 
     // WHEN
-    UserInfoDto actualUser = userServiceOnTest.update(userUpdateDto);
+    UserInfoDto actualUser = userServiceOnTest.update(userUpdateDto, savedUser);
 
     // THEN
     assertEquals(expectedUser, actualUser);
@@ -127,7 +131,7 @@ class UserServiceTest {
     when(userRepositoryMock.save(userToSave)).thenReturn(savedUser);
 
     // WHEN
-    UserInfoDto actualUser = userServiceOnTest.update(userUpdateDto);
+    UserInfoDto actualUser = userServiceOnTest.update(userUpdateDto, savedUser);
 
     // THEN
     assertEquals(expectedUser, actualUser);
@@ -137,16 +141,21 @@ class UserServiceTest {
   @DisplayName("Fail to update user if user email already exists")
   void updateUserFailedIfEmailAlreadyExists() {
     // GIVEN
-    String expectedUserEmail = "email@mail";
-    UserUpdateDto userUpdateDto = new UserUpdateDto(UUID.randomUUID(), "name", expectedUserEmail);
+    String busyUserEmail = "email@mail";
+    UserEntity userOfBusyEmail = new UserEntity();
+    userOfBusyEmail.setEmail(busyUserEmail);
 
+    UUID existingUserId = UUID.randomUUID();
+    UserUpdateDto userUpdateDto = new UserUpdateDto(existingUserId, "name", busyUserEmail);
     UserEntity existingUser = new UserEntity();
-    existingUser.setEmail(expectedUserEmail);
+    existingUser.setId(existingUserId);
 
-    when(userRepositoryMock.findByEmail(expectedUserEmail)).thenReturn(Optional.of(existingUser));
+    when(userRepositoryMock.findById(existingUserId)).thenReturn(Optional.of(existingUser));
+    when(userRepositoryMock.findByEmail(busyUserEmail)).thenReturn(Optional.of(userOfBusyEmail));
 
     // WHEN // THEN
-    assertThrows(UserConflictException.class, () -> userServiceOnTest.update(userUpdateDto));
+    assertThrows(
+        UserConflictException.class, () -> userServiceOnTest.update(userUpdateDto, existingUser));
   }
 
   @Test
@@ -159,12 +168,14 @@ class UserServiceTest {
     when(userRepositoryMock.findById(expectedUserId)).thenReturn(Optional.empty());
 
     // WHEN // THEN
-    assertThrows(UserNotFoundException.class, () -> userServiceOnTest.update(userUpdateDto));
+    assertThrows(
+        UserNotFoundException.class,
+        () -> userServiceOnTest.update(userUpdateDto, new UserEntity()));
   }
 
   @Test
-  @DisplayName("Find user by id successfully")
-  void getUserById() {
+  @DisplayName("Find authenticated user by id successfully")
+  void getAuthUser() {
     // GIVEN
     UUID existingUserId = UUID.randomUUID();
 
@@ -178,27 +189,15 @@ class UserServiceTest {
     when(userRepositoryMock.findById(existingUserId)).thenReturn(Optional.of(existingUser));
 
     // WHEN
-    UserInfoDto actualUser = userServiceOnTest.getById(existingUserId);
+    UserInfoDto actualUser = userServiceOnTest.getAuthUser(existingUser);
 
     // THEN
     assertEquals(expectedUser, actualUser);
   }
 
   @Test
-  @DisplayName("Fail to get user by id if user is not found")
-  void getUserByIdFailedIfUserNotFound() {
-    // GIVEN
-    UUID existingUserId = UUID.randomUUID();
-
-    when(userRepositoryMock.findById(existingUserId)).thenReturn(Optional.empty());
-
-    // WHEN // THEN
-    assertThrows(UserNotFoundException.class, () -> userServiceOnTest.getById(existingUserId));
-  }
-
-  @Test
-  @DisplayName("Delete user by id successfully")
-  void deleteUserById() {
+  @DisplayName("Delete authenticated user by id successfully")
+  void deleteAuthUser() {
     // GIVEN
     UUID existingUserId = UUID.randomUUID();
 
@@ -212,21 +211,9 @@ class UserServiceTest {
     when(userRepositoryMock.findById(existingUserId)).thenReturn(Optional.of(existingUser));
 
     // WHEN
-    UserInfoDto actualUser = userServiceOnTest.deleteById(existingUserId);
+    UserInfoDto actualUser = userServiceOnTest.deleteAuthUser(existingUser);
 
     // THEN
     assertEquals(expectedUser, actualUser);
-  }
-
-  @Test
-  @DisplayName("Fail to delete user by id if user is not found")
-  void deleteUserByIdFailedIfUserNotFound() {
-    // GIVEN
-    UUID existingUserId = UUID.randomUUID();
-
-    when(userRepositoryMock.findById(existingUserId)).thenReturn(Optional.empty());
-
-    // WHEN // THEN
-    assertThrows(UserNotFoundException.class, () -> userServiceOnTest.deleteById(existingUserId));
   }
 }

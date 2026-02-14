@@ -30,6 +30,19 @@
 								"type": "text/javascript",
 								"packages": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const requestBody  = pm.request.body.raw;\r",
+									"const requestData = JSON.parse(requestBody);\r",
+									"pm.environment.set('user_email', requestData.email)\r",
+									"pm.environment.set('user_password', requestData.password)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
 					],
 					"request": {
@@ -37,7 +50,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"name\",\r\n    \"email\": \"email@mail\"\r\n}",
+							"raw": "{\r\n    \"name\": \"name\",\r\n    \"email\": \"email@mail\",\r\n    \"password\": \"password\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -45,31 +58,107 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}/users",
+							"raw": "{{url}}/registration",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
-								"users"
+								"registration"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Update user",
+					"name": "Create second user",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
+									"const myData = pm.response.json();\r",
+									"pm.environment.set('id_second_user', myData.id)\r",
+									"\r",
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([201]);\r",
+									"});\r",
+									"pm.test(\"Response have body\", function () {\r",
+									"    pm.response.to.be.withBody;\r",
+									"    pm.response.to.be.json;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const requestBody  = pm.request.body.raw;\r",
+									"const requestData = JSON.parse(requestBody);\r",
+									"pm.environment.set('second_user_email', requestData.email)\r",
+									"pm.environment.set('second_user_password', requestData.password)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"second\",\r\n    \"email\": \"second_email@mail\",\r\n    \"password\": \"password2\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/registration",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"registration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update auth user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const myData = pm.response.json();\r",
+									"pm.environment.set('user_email', myData.email)\r",
+									"\r",
 									"pm.test(\"Status code is 200\", function () {\r",
 									"    pm.expect(pm.response.code).to.be.oneOf([200]);\r",
 									"});\r",
 									"pm.test(\"Response have body\", function () {\r",
 									"    pm.response.to.be.withBody;\r",
 									"    pm.response.to.be.json;\r",
-									"});"
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));\r",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -101,7 +190,7 @@
 					"response": []
 				},
 				{
-					"name": "Find user id",
+					"name": "Find auth user",
 					"event": [
 						{
 							"listen": "test",
@@ -118,6 +207,17 @@
 								"type": "text/javascript",
 								"packages": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
 					],
 					"protocolProfileBehavior": {
@@ -128,7 +228,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "",
+							"raw": "{\r\n    \"name\": \"second\",\r\n    \"email\": \"second_email@mail\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -136,20 +236,19 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}/users/{{id_user}}",
+							"raw": "{{url}}/users",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
-								"users",
-								"{{id_user}}"
+								"users"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Remove user by id",
+					"name": "Remove auth user",
 					"event": [
 						{
 							"listen": "test",
@@ -162,6 +261,17 @@
 									"    pm.response.to.be.withBody;\r",
 									"    pm.response.to.be.json;\r",
 									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -181,17 +291,38 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}/users/{{id_user}}",
+							"raw": "{{url}}/users",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
-								"users",
-								"{{id_user}}"
+								"users"
 							]
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -219,6 +350,17 @@
 								"type": "text/javascript",
 								"packages": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
 					],
 					"request": {
@@ -226,7 +368,66 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"balance\": 34567.23,\r\n    \"currencyCharCode\": \"USD\",\r\n    \"userId\":\"{{id_user}}\"\r\n}",
+							"raw": "{\r\n    \"balance\": 34567.23,\r\n    \"currencyCharCode\": \"USD\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/accounts",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create bank account of second user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const myData = pm.response.json();\r",
+									"pm.environment.set('id_account', myData.id)\r",
+									"\r",
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([201]);\r",
+									"});\r",
+									"pm.test(\"Response have body\", function () {\r",
+									"    pm.response.to.be.withBody;\r",
+									"    pm.response.to.be.json;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{second_user_email}}', pm.variables.get('second_user_password'));\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"balance\": 34567.23,\r\n    \"currencyCharCode\": \"USD\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -259,6 +460,17 @@
 									"    pm.response.to.be.withBody;\r",
 									"    pm.response.to.be.json;\r",
 									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -307,6 +519,17 @@
 								"type": "text/javascript",
 								"packages": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
 					],
 					"protocolProfileBehavior": {
@@ -351,6 +574,17 @@
 									"    pm.response.to.be.withBody;\r",
 									"    pm.response.to.be.json;\r",
 									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -406,6 +640,17 @@
 								"type": "text/javascript",
 								"packages": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
 					],
 					"protocolProfileBehavior": {
@@ -443,6 +688,64 @@
 					"response": []
 				},
 				{
+					"name": "Find bank account of user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200]);\r",
+									"});\r",
+									"pm.test(\"Response have body\", function () {\r",
+									"    pm.response.to.be.withBody;\r",
+									"    pm.response.to.be.json;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/accounts",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Remove bank account by id",
 					"event": [
 						{
@@ -456,6 +759,17 @@
 									"    pm.response.to.be.withBody;\r",
 									"    pm.response.to.be.json;\r",
 									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"eval(pm.environment.get('setAuthHeadersString'));\r",
+									"setAuthHeaders('{{user_email}}', pm.variables.get('user_password'));"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -523,7 +837,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{url}}/currencies?size=27&page=1&sort=vunitRate,DESC",
+							"raw": "{{url}}/currencies?size=27&page=0&sort=vunitRate,DESC",
 							"host": [
 								"{{url}}"
 							],
@@ -537,7 +851,7 @@
 								},
 								{
 									"key": "page",
-									"value": "1"
+									"value": "0"
 								},
 								{
 									"key": "sort",
@@ -547,8 +861,170 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Find currecny by char code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const myData = pm.response.json();\r",
+									"pm.environment.set('id_currecny', myData.id)\r",
+									"\r",
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200]);\r",
+									"});\r",
+									"pm.test(\"Response have body\", function () {\r",
+									"    pm.response.to.be.withBody;\r",
+									"    pm.response.to.be.json;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/currencies/char-code/CNY",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"currencies",
+								"char-code",
+								"CNY"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find currecny by id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([200]);\r",
+									"});\r",
+									"pm.test(\"Response have body\", function () {\r",
+									"    pm.response.to.be.withBody;\r",
+									"    pm.response.to.be.json;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/currencies/{{id_currecny}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"currencies",
+								"{{id_currecny}}"
+							]
+						}
+					},
+					"response": []
 				}
 			]
+		},
+		{
+			"name": "kafka",
+			"item": [
+				{
+					"name": "Save currency",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"charCode\": \"MYC\",\r\n    \"name\": \"my currency\",\r\n    \"vunitRate\": \"40.2345\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/kafka/currencies",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"kafka",
+								"currencies"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"function setAuthHeaders(userEmail, password) {\r",
+					"    function encodePassword(str) {\r",
+					"        const chars = str.split('');\r",
+					"        const digits = chars.map(char => {\r",
+					"            const codeStr = char.charCodeAt(0);\r",
+					"            return BigInt(codeStr);\r",
+					"        });\r",
+					"        const allDigits = [].concat(...digits);\r",
+					"        let sum = allDigits.reduce((acc, digit) => acc + digit, BigInt(0));\r",
+					"        const multiplier = BigInt(\"8232323433324765857\");\r",
+					"        sum *= multiplier;\r",
+					"        return String(sum);\r",
+					"    }\r",
+					"    const encodedPassword = encodePassword(password);\r",
+					"    pm.request.headers.add({ key: 'X-Password', value: encodedPassword });\r",
+					"    pm.request.headers.add({ key: 'X-User-Email', value: userEmail });\r",
+					"}\r",
+					"\r",
+					"pm.environment.set('setAuthHeadersString', setAuthHeaders.toString());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }

@@ -11,5 +11,6 @@ spring:
       ddl-auto: create-drop
 
 app:
+  kafka.enabled: false
   currency-scheduler.enabled: false
   db-init.add-currencies.enabled: false

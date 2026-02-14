@@ -35,17 +35,28 @@ feign.client.config.currency-feign-client:
 app:
   controller:
     base-path: '/api/v1'
+    registration-path: '/registration'
     users-path: '/users'
     accounts-path: '/accounts'
     currencies-path: '/currencies'
 
     endpoints:
+      registration: "${app.controller.base-path}${app.controller.registration-path}"
       users: "${app.controller.base-path}${app.controller.users-path}"
       accounts: "${app.controller.base-path}${app.controller.accounts-path}"
       currencies: "${app.controller.base-path}${app.controller.currencies-path}"
 
-  zone: 'Europe/Moscow'
+  kafka:
+    enabled: true
+    bootstrap-address: ${KAFKA_BOOTSTRAP_ADDRESS://localhost:9092}
+    currency-topic: currency-topic
+    group-id: currency-group
 
+  headers:
+    user-email: 'X-User-Email'
+    password: 'X-Password'
+
+  zone: 'Europe/Moscow'
   currency-scheduler:
     enabled: true
     type: # mock # real scheduler in any case without mock
@@ -55,6 +66,10 @@ app:
   currency-feign-client:
     host: https://cbr.ru
     url: /scripts/XML_daily.asp
-    get-currencies.date-req.pattern: 'dd/MM/yyyy'
+    get-currencies.date-req-pattern: 'dd/MM/yyyy'
 
   db-init.add-currencies.enabled: true
+
+logging:
+  level:
+    org.apache.kafka: WARN

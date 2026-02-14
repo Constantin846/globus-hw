@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.Data;
+import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -18,7 +19,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Table(name = "users")
 @EntityListeners(AuditingEntityListener.class)
-public class UserEntity {
+public class UserEntity implements Cloneable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,6 +31,10 @@ public class UserEntity {
   @Column(name = "email", nullable = false, unique = true)
   private String email;
 
+  @ToString.Exclude
+  @Column(name = "password", nullable = false)
+  private String password;
+
   @CreatedDate
   @Column(name = "create_date_time", updatable = false, nullable = false)
   private Instant createDateTime;
@@ -37,4 +42,9 @@ public class UserEntity {
   @LastModifiedDate
   @Column(name = "update_date_time", nullable = false)
   private Instant updateDateTime;
+
+  @Override
+  public UserEntity clone() throws CloneNotSupportedException {
+    return (UserEntity) super.clone();
+  }
 }

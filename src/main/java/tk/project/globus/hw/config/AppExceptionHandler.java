@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tk.project.globus.hw.dto.ErrorResponse;
 import tk.project.globus.hw.exception.BankAccountNotFoundException;
 import tk.project.globus.hw.exception.CurrencyNotFoundException;
+import tk.project.globus.hw.exception.KafkaSendEventException;
 import tk.project.globus.hw.exception.UserConflictException;
+import tk.project.globus.hw.exception.UserNotAccessException;
 import tk.project.globus.hw.exception.UserNotFoundException;
+import tk.project.globus.hw.exception.UserUnauthorizedException;
 
 @Slf4j
 @RestControllerAdvice
@@ -35,6 +38,18 @@ public class AppExceptionHandler {
     return buildErrorResponse(ex, HttpStatus.CONFLICT);
   }
 
+  @ResponseStatus(HttpStatus.UNAUTHORIZED)
+  @ExceptionHandler(UserUnauthorizedException.class)
+  public ErrorResponse handleUserUnauthorized(UserUnauthorizedException ex) {
+    return buildErrorResponse(ex, HttpStatus.UNAUTHORIZED);
+  }
+
+  @ResponseStatus(HttpStatus.FORBIDDEN)
+  @ExceptionHandler(UserNotAccessException.class)
+  public ErrorResponse handleUserNotAccess(UserNotAccessException ex) {
+    return buildErrorResponse(ex, HttpStatus.FORBIDDEN);
+  }
+
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ErrorResponse handlerValidException(MethodArgumentNotValidException ex) {
@@ -47,10 +62,11 @@ public class AppExceptionHandler {
     return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, message);
   }
 
-  @ExceptionHandler(Exception.class)
+  @ExceptionHandler(exception = {Exception.class, KafkaSendEventException.class})
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public ErrorResponse uncaughtExceptionHandler(Exception ex) {
-    return buildErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR);
+    return buildErrorResponse(
+        ex, HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.name());
   }
 
   private ErrorResponse buildErrorResponse(Exception ex, HttpStatus status) {

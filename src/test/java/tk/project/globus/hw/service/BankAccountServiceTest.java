@@ -1,6 +1,7 @@
 package tk.project.globus.hw.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -21,7 +22,6 @@ import tk.project.globus.hw.entity.CurrencyEntity;
 import tk.project.globus.hw.entity.UserEntity;
 import tk.project.globus.hw.exception.BankAccountNotFoundException;
 import tk.project.globus.hw.exception.CurrencyNotFoundException;
-import tk.project.globus.hw.exception.UserNotFoundException;
 import tk.project.globus.hw.mapper.BankAccountMapper;
 import tk.project.globus.hw.repository.BankAccountRepository;
 import tk.project.globus.hw.repository.CurrencyRepository;
@@ -51,8 +51,7 @@ class BankAccountServiceTest {
     BigDecimal expectedBalance = BigDecimal.valueOf(33.33);
     String expectedCurCharCode = "USD";
 
-    AccountCreateDto accountCreateDto =
-        new AccountCreateDto(expectedBalance, expectedCurCharCode, existingUserId);
+    AccountCreateDto accountCreateDto = new AccountCreateDto(expectedBalance, expectedCurCharCode);
 
     BankAccountEntity accountToSave = accountMapper.toBankAccountEntity(accountCreateDto);
     accountToSave.setUser(existingUser);
@@ -67,61 +66,44 @@ class BankAccountServiceTest {
 
     when(currencyRepositoryMock.findByCharCode(expectedCurCharCode))
         .thenReturn(Optional.of(new CurrencyEntity()));
-    when(userRepositoryMock.findById(existingUserId)).thenReturn(Optional.of(existingUser));
     when(accountRepositoryMock.save(accountToSave)).thenReturn(savedAccount);
 
     // WHEN
-    AccountInfoDto actualAccount = accountServiceOnTest.create(accountCreateDto);
+    AccountInfoDto actualAccount = accountServiceOnTest.create(accountCreateDto, existingUser);
 
     // THEN
     assertEquals(expectedAccount, actualAccount);
   }
 
   @Test
-  @DisplayName("Fail to create bank account if user is not found")
-  void createAccountFailedIfUserNotFound() {
-    // GIVEN
-    UUID existingUserId = UUID.randomUUID();
-    BigDecimal anyBalance = BigDecimal.valueOf(33.33);
-    String anyCurCharCode = "USD";
-
-    AccountCreateDto accountCreateDto =
-        new AccountCreateDto(anyBalance, anyCurCharCode, existingUserId);
-
-    when(currencyRepositoryMock.findByCharCode(anyCurCharCode))
-        .thenReturn(Optional.of(new CurrencyEntity()));
-    when(userRepositoryMock.findById(existingUserId)).thenReturn(Optional.empty());
-
-    // WHEN // THEN
-    assertThrows(UserNotFoundException.class, () -> accountServiceOnTest.create(accountCreateDto));
-  }
-
-  @Test
   @DisplayName("Fail to create bank account if currency does not exist")
   void createAccountFailedIfCurrencyNotExists() {
     // GIVEN
-    UUID anyUserId = UUID.randomUUID();
     BigDecimal anyBalance = BigDecimal.valueOf(33.33);
     String notExistingCurCharCode = "EUR";
 
-    AccountCreateDto accountCreateDto =
-        new AccountCreateDto(anyBalance, notExistingCurCharCode, anyUserId);
+    AccountCreateDto accountCreateDto = new AccountCreateDto(anyBalance, notExistingCurCharCode);
 
     when(currencyRepositoryMock.findByCharCode(notExistingCurCharCode))
         .thenReturn(Optional.empty());
 
     // WHEN // THEN
     assertThrows(
-        CurrencyNotFoundException.class, () -> accountServiceOnTest.create(accountCreateDto));
+        CurrencyNotFoundException.class,
+        () -> accountServiceOnTest.create(accountCreateDto, new UserEntity()));
   }
 
   @Test
   @DisplayName("Update bank account successfully")
   void updateAccount() {
     // GIVEN
+    UserEntity existingUser = new UserEntity();
+    existingUser.setId(UUID.randomUUID());
+
     UUID existingAccountId = UUID.randomUUID();
     BankAccountEntity existingAccount = new BankAccountEntity();
     existingAccount.setId(existingAccountId);
+    existingAccount.setUser(existingUser);
 
     BigDecimal expectedBalance = BigDecimal.valueOf(33.33);
     String expectedCurCharCode = "EUR";
@@ -130,11 +112,13 @@ class BankAccountServiceTest {
         new AccountUpdateDto(existingAccountId, expectedBalance, expectedCurCharCode);
 
     BankAccountEntity accountToSave = accountMapper.toBankAccountEntity(accountUpdateDto);
+    accountToSave.setUser(existingUser);
 
     BankAccountEntity savedAccount = new BankAccountEntity();
     savedAccount.setId(existingAccountId);
     savedAccount.setBalance(expectedBalance);
     savedAccount.setCurrencyCharCode(expectedCurCharCode);
+    savedAccount.setUser(existingUser);
 
     AccountInfoDto expectedAccount = accountMapper.toAccountInfoDto(savedAccount);
 
@@ -145,7 +129,7 @@ class BankAccountServiceTest {
     when(accountRepositoryMock.save(accountToSave)).thenReturn(savedAccount);
 
     // WHEN
-    AccountInfoDto actualAccount = accountServiceOnTest.update(accountUpdateDto);
+    AccountInfoDto actualAccount = accountServiceOnTest.update(accountUpdateDto, existingUser);
 
     // THEN
     assertEquals(expectedAccount, actualAccount);
@@ -155,6 +139,9 @@ class BankAccountServiceTest {
   @DisplayName("Not update account fields to null")
   void notUpdateAccountFieldsToNull() {
     // GIVEN
+    UserEntity existingUser = new UserEntity();
+    existingUser.setId(UUID.randomUUID());
+
     UUID existingAccountId = UUID.randomUUID();
     BigDecimal expectedBalance = BigDecimal.valueOf(33.33);
     String expectedCurCharCode = "EUR";
@@ -163,6 +150,7 @@ class BankAccountServiceTest {
     existingAccount.setId(existingAccountId);
     existingAccount.setBalance(expectedBalance);
     existingAccount.setCurrencyCharCode(expectedCurCharCode);
+    existingAccount.setUser(existingUser);
 
     AccountUpdateDto accountUpdateDto = new AccountUpdateDto(existingAccountId, null, null);
 
@@ -170,6 +158,7 @@ class BankAccountServiceTest {
     savedAccount.setId(existingAccountId);
     savedAccount.setBalance(expectedBalance);
     savedAccount.setCurrencyCharCode(expectedCurCharCode);
+    savedAccount.setUser(existingUser);
 
     AccountInfoDto expectedAccount = accountMapper.toAccountInfoDto(savedAccount);
 
@@ -178,7 +167,7 @@ class BankAccountServiceTest {
     when(accountRepositoryMock.save(existingAccount)).thenReturn(savedAccount);
 
     // WHEN
-    AccountInfoDto actualAccount = accountServiceOnTest.update(accountUpdateDto);
+    AccountInfoDto actualAccount = accountServiceOnTest.update(accountUpdateDto, existingUser);
 
     // THEN
     assertEquals(expectedAccount, actualAccount);
@@ -199,16 +188,21 @@ class BankAccountServiceTest {
 
     // WHEN // THEN
     assertThrows(
-        BankAccountNotFoundException.class, () -> accountServiceOnTest.update(accountUpdateDto));
+        BankAccountNotFoundException.class,
+        () -> accountServiceOnTest.update(accountUpdateDto, new UserEntity()));
   }
 
   @Test
   @DisplayName("Fail to update bank account if currency does not exist")
   void updateAccountFailedIfCurrencyNotExists() {
     // GIVEN
+    UserEntity existingUser = new UserEntity();
+    existingUser.setId(UUID.randomUUID());
+
     UUID existingAccountId = UUID.randomUUID();
     BankAccountEntity existingAccount = new BankAccountEntity();
     existingAccount.setId(existingAccountId);
+    existingAccount.setUser(existingUser);
 
     BigDecimal anyBalance = BigDecimal.valueOf(33.33);
     String notExistingCurCharCode = "EUR";
@@ -223,13 +217,17 @@ class BankAccountServiceTest {
 
     // WHEN // THEN
     assertThrows(
-        CurrencyNotFoundException.class, () -> accountServiceOnTest.update(accountUpdateDto));
+        CurrencyNotFoundException.class,
+        () -> accountServiceOnTest.update(accountUpdateDto, existingUser));
   }
 
   @Test
   @DisplayName("Change currency of bank account successfully")
   void changeCurrencyOfAccount() {
     // GIVEN
+    UserEntity existingUser = new UserEntity();
+    existingUser.setId(UUID.randomUUID());
+
     UUID existingAccountId = UUID.randomUUID();
     BigDecimal expectedBalance = BigDecimal.valueOf(33.33);
 
@@ -237,6 +235,7 @@ class BankAccountServiceTest {
     existingAccount.setId(existingAccountId);
     existingAccount.setBalance(expectedBalance);
     existingAccount.setCurrencyCharCode("OLD");
+    existingAccount.setUser(existingUser);
 
     String expectedCurCharCode = "EUR";
     CurrencyEntity existingCurrency = new CurrencyEntity();
@@ -246,6 +245,7 @@ class BankAccountServiceTest {
     newAccount.setId(existingAccountId);
     newAccount.setBalance(expectedBalance);
     newAccount.setCurrencyCharCode(expectedCurCharCode);
+    newAccount.setUser(existingUser);
 
     AccountInfoDto expectedAccount = accountMapper.toAccountInfoDto(newAccount);
 
@@ -259,7 +259,7 @@ class BankAccountServiceTest {
 
     // WHEN
     AccountInfoDto actualAccount =
-        accountServiceOnTest.changeCurrency(existingAccountId, expectedCurCharCode);
+        accountServiceOnTest.changeCurrency(existingAccountId, expectedCurCharCode, existingUser);
 
     // THEN
     assertEquals(expectedAccount, actualAccount);
@@ -281,7 +281,9 @@ class BankAccountServiceTest {
     // WHEN // THEN
     assertThrows(
         BankAccountNotFoundException.class,
-        () -> accountServiceOnTest.changeCurrency(notExistingAccountId, anyCurCharCode));
+        () ->
+            accountServiceOnTest.changeCurrency(
+                notExistingAccountId, anyCurCharCode, new UserEntity()));
   }
 
   @Test
@@ -297,16 +299,17 @@ class BankAccountServiceTest {
     // WHEN // THEN
     assertThrows(
         CurrencyNotFoundException.class,
-        () -> accountServiceOnTest.changeCurrency(anyAccountId, notExistingCurCharCode));
+        () ->
+            accountServiceOnTest.changeCurrency(
+                anyAccountId, notExistingCurCharCode, new UserEntity()));
   }
 
   @Test
   @DisplayName("Find bank account by id successfully")
   void getAccountByIdNotChangeCurrency() {
     // GIVEN
-    UUID existingUserId = UUID.randomUUID();
     UserEntity existingUser = new UserEntity();
-    existingUser.setId(existingUserId);
+    existingUser.setId(UUID.randomUUID());
     existingUser.setEmail("email@email");
     existingUser.setName("user name");
 
@@ -326,7 +329,8 @@ class BankAccountServiceTest {
         .thenReturn(Optional.of(existingAccount));
 
     // WHEN
-    AccountInfoDto actualAccount = accountServiceOnTest.getById(existingAccountId, null);
+    AccountInfoDto actualAccount =
+        accountServiceOnTest.getById(existingAccountId, null, existingUser);
 
     // THEN
     assertEquals(expectedAccount, actualAccount);
@@ -336,9 +340,8 @@ class BankAccountServiceTest {
   @DisplayName("Find bank account by id and change currency successfully")
   void getAccountByIdAndChangeCurrency() {
     // GIVEN
-    UUID existingUserId = UUID.randomUUID();
     UserEntity existingUser = new UserEntity();
-    existingUser.setId(existingUserId);
+    existingUser.setId(UUID.randomUUID());
     existingUser.setEmail("email@email");
     existingUser.setName("user name");
 
@@ -368,7 +371,7 @@ class BankAccountServiceTest {
 
     // WHEN
     AccountInfoDto actualAccount =
-        accountServiceOnTest.getById(existingAccountId, expectedCurCharCode);
+        accountServiceOnTest.getById(existingAccountId, expectedCurCharCode, existingUser);
 
     // THEN
     assertEquals(expectedAccount, actualAccount);
@@ -385,13 +388,16 @@ class BankAccountServiceTest {
     // WHEN // THEN
     assertThrows(
         BankAccountNotFoundException.class,
-        () -> accountServiceOnTest.getById(existingAccountId, null));
+        () -> accountServiceOnTest.getById(existingAccountId, null, new UserEntity()));
   }
 
   @Test
   @DisplayName("Delete bank account by id successfully")
   void deleteAccountById() {
     // GIVEN
+    UserEntity existingUser = new UserEntity();
+    existingUser.setId(UUID.randomUUID());
+
     UUID existingAccountId = UUID.randomUUID();
     BigDecimal expectedBalance = BigDecimal.valueOf(33.33);
     String expectedCurCharCode = "USD";
@@ -400,6 +406,7 @@ class BankAccountServiceTest {
     existingAccount.setId(existingAccountId);
     existingAccount.setBalance(expectedBalance);
     existingAccount.setCurrencyCharCode(expectedCurCharCode);
+    existingAccount.setUser(existingUser);
 
     AccountInfoDto expectedAccount = accountMapper.toAccountInfoDto(existingAccount);
 
@@ -407,7 +414,7 @@ class BankAccountServiceTest {
         .thenReturn(Optional.of(existingAccount));
 
     // WHEN
-    AccountInfoDto actualAccount = accountServiceOnTest.deleteById(existingAccountId);
+    AccountInfoDto actualAccount = accountServiceOnTest.deleteById(existingAccountId, existingUser);
 
     // THEN
     assertEquals(expectedAccount, actualAccount);
@@ -424,6 +431,6 @@ class BankAccountServiceTest {
     // WHEN // THEN
     assertThrows(
         BankAccountNotFoundException.class,
-        () -> accountServiceOnTest.deleteById(existingAccountId));
+        () -> accountServiceOnTest.deleteById(existingAccountId, new UserEntity()));
   }
 }
